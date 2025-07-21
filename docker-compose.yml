@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: wallet-postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - ./PGDATA:/var/lib/postgresql/data
+      - ./DB/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - flownet
+
+  service-discovery:
+    build:
+      context: ./service-discovery
+      dockerfile: Dockerfile
+    container_name: service-discovery
+    ports:
+      - "8761:8761"
+    networks:
+      - flownet
+
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - service-discovery
+    networks:
+      - flownet
+
+networks:
+  flownet:
+    driver: bridge
