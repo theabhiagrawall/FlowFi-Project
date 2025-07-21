@@ -71,6 +71,26 @@ spring.cloud.gateway.routes[2].id=transaction-service
 spring.cloud.gateway.routes[2].uri=http://transaction-service:8083
 spring.cloud.gateway.routes[2].predicates[0]=Path=/transaction-service/**
 ```
+### Step 5: Create .env File and PGDATA/ Folder
+This step is required before running Docker to configure your PostgreSQL database.
+
+Create a .env file in the root of the project (flow-fi/.env) with the following variables:
+
+```env
+DB_NAME=your_database_name
+DB_USER=your_database_user
+DB_PASS=your_database_password
+```
+Replace the values according to your environment.
+
+Create the PGDATA/ folder to persist PostgreSQL data:
+
+```bash
+mkdir -p PGDATA
+```
+This folder will be mounted as a Docker volume for the PostgreSQL container.
+
+
 ### ⚙️ Run All Services
 ```bash
 docker-compose up --build
@@ -110,8 +130,9 @@ git checkout -b feature/my-service
 ```
 Add your microservice using steps above.
 
+Test locally with 
 ```bash
-Test locally with docker-compose up --build.
+docker-compose up --build
 ```
 Commit and push changes.
 
