@@ -16,7 +16,7 @@ import {
   History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Logo from './logo';
+
 
 const navItems = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },

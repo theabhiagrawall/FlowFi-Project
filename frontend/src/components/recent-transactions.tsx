@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { transactions } from '@/lib/data';
 import { ArrowDownLeft, ArrowUpRight, ArrowRightLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
