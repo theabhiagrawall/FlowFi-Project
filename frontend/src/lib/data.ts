@@ -10,21 +10,22 @@ export const users: User[] = [
 ];
 
 export const transactions: Transaction[] = [
-  { id: 'txn-1', type: 'deposit', amount: 1000, date: '2024-07-20T10:00:00Z', description: 'Monthly Salary', status: 'completed' },
-  { id: 'txn-2', type: 'transfer', amount: 150.75, date: '2024-07-19T14:30:00Z', description: 'Dinner with friends', status: 'completed', from: users[0], to: users[1] },
-  { id: 'txn-3', type: 'withdrawal', amount: 50, date: '2024-07-18T09:15:00Z', description: 'ATM Withdrawal', status: 'completed' },
-  { id: 'txn-4', type: 'transfer', amount: 45.50, date: '2024-07-17T18:00:00Z', description: 'Movie tickets', status: 'completed', from: users[0], to: users[3] },
-  { id: 'txn-5', type: 'deposit', amount: 200, date: '2024-07-16T11:45:00Z', description: 'Freelance project payment', status: 'completed' },
-  { id: 'txn-6', type: 'transfer', amount: 500, date: '2024-07-15T20:00:00Z', description: 'Rent payment', status: 'completed', from: users[0], to: users[4] },
+  { id: 'txn-1', type: 'deposit', amount: 1000, date: '2025-07-20T10:00:00Z', description: 'Monthly Salary', status: 'completed' },
+  { id: 'txn-2', type: 'transfer', amount: 150.75, date: '2025-07-19T14:30:00Z', description: 'Dinner with friends', status: 'completed', from: users[0], to: users[1] },
+  { id: 'txn-3', type: 'withdrawal', amount: 50, date: '2025-07-18T09:15:00Z', description: 'ATM Withdrawal', status: 'completed' },
+  { id: 'txn-4', type: 'transfer', amount: 45.50, date: '2025-07-17T18:00:00Z', description: 'Movie tickets', status: 'completed', from: users[0], to: users[3] },
+  { id: 'txn-5', type: 'deposit', amount: 200, date: '2025-07-16T11:45:00Z', description: 'Freelance project payment', status: 'completed' },
+  { id: 'txn-6', type: 'transfer', amount: 500, date: '2025-07-15T20:00:00Z', description: 'Rent payment', status: 'completed', from: users[0], to: users[4] },
 ];
 
 export const favoriteContacts: User[] = [
   users[1], users[3], users[2], users[5]
 ];
 
+
 export const getAuthenticatedUser = (): User => {
   // In a real app, this would involve session/token management.
-  // For this simulation, we'll just return the first user.
+  // For time being added this
   return users[0];
 };
 
