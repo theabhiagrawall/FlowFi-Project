@@ -1,7 +1,6 @@
 GRANT ALL PRIVILEGES ON DATABASE flow_fi TO flowadmin;
 \connect flow_fi;
 
-
 -- User Service
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY,
@@ -9,6 +8,9 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255),
     name VARCHAR(255) NOT NULL,
     status VARCHAR(20) CHECK (status IN ('active', 'inactive', 'blocked')),
+    email_verified BOOLEAN DEFAULT FALSE,
+    kyc_verified BOOLEAN DEFAULT FALSE,
+    password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -59,8 +61,49 @@ CREATE TABLE IF NOT EXISTS add_money_requests (
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Auth Service (optional)
--- CREATE TABLE IF NOT EXISTS auth_sessions (...);
--- CREATE TABLE IF NOT EXISTS otp_logs (...);
-
 SELECT '✅ Tables created';
+
+-- Insert dummy users
+INSERT INTO users (id, phone_number, email, name, status, email_verified, kyc_verified, password_hash)
+VALUES 
+(gen_random_uuid(), '9876543210', 'rahul.sharma@example.com', 'Rahul Sharma', 'active', true, true, 'hashed_pw1'),
+(gen_random_uuid(), '9823456789', 'priya.kapoor@example.com', 'Priya Kapoor', 'active', true, false, 'hashed_pw2'),
+(gen_random_uuid(), '9812345678', 'arjun.verma@example.com', 'Arjun Verma', 'inactive', false, false, 'hashed_pw3'),
+(gen_random_uuid(), '9871122334', 'neha.mehra@example.com', 'Neha Mehra', 'active', true, true, 'hashed_pw4'),
+(gen_random_uuid(), '9845567788', 'vikas.patil@example.com', 'Vikas Patil', 'blocked', false, false, 'hashed_pw5'),
+(gen_random_uuid(), '9912345670', 'ananya.sen@example.com', 'Ananya Sen', 'active', true, true, 'hashed_pw6'),
+(gen_random_uuid(), '9988776655', 'rohit.yadav@example.com', 'Rohit Yadav', 'inactive', true, false, 'hashed_pw7'),
+(gen_random_uuid(), '9900112233', 'kavita.nair@example.com', 'Kavita Nair', 'active', true, true, 'hashed_pw8'),
+(gen_random_uuid(), '9955667788', 'sachin.jain@example.com', 'Sachin Jain', 'blocked', false, false, 'hashed_pw9'),
+(gen_random_uuid(), '9988991122', 'meena.kumari@example.com', 'Meena Kumari', 'active', true, true, 'hashed_pw10');
+
+-- Sample static example:
+INSERT INTO kyc_info (id, user_id, pan_number, aadhaar_number, verified)
+VALUES
+(gen_random_uuid(), (SELECT id FROM users WHERE email = 'rahul.sharma@example.com'), 'ABCDE1234F', '123456789012', true),
+(gen_random_uuid(), (SELECT id FROM users WHERE email = 'neha.mehra@example.com'), 'WXYZ5678K', '987654321098', true);
+
+-- Dummy wallets
+INSERT INTO wallets (id, user_id, balance)
+SELECT gen_random_uuid(), id, ROUND((RANDOM() * 10000)::numeric, 2) FROM users;
+
+-- Dummy bank accounts
+INSERT INTO bank_accounts (id, user_id, bank_name, account_token, ifsc_code, verified)
+SELECT gen_random_uuid(), id, 
+       'State Bank of India', 
+       md5(random()::text), 
+       'SBIN0001234', 
+       true 
+FROM users LIMIT 5;
+
+-- Dummy add_money_requests
+INSERT INTO add_money_requests (id, user_id, bank_account_id, amount, status)
+SELECT 
+    gen_random_uuid(), 
+    ba.user_id, 
+    ba.id, 
+    ROUND((RANDOM() * 5000 + 100)::numeric, 2), 
+    'initiated'
+FROM bank_accounts ba;
+
+SELECT '✅ Dummy data inserted';
