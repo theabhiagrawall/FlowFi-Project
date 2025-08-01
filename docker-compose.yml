@@ -38,6 +38,16 @@ services:
     networks:
       - flownet
 
+  wallet-service:
+    build: ./wallet-service
+    container_name: wallet-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - api-gateway
+    networks:
+      - flownet
+
 
   frontend:
     build:
