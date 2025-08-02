@@ -38,6 +38,16 @@ services:
     networks:
       - flownet
 
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - api-gateway
+    networks:
+      - flownet
+
 
   frontend:
     build:
