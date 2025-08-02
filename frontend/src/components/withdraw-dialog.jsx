@@ -44,7 +44,7 @@ export function WithdrawDialog() {
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="amount">Amount (USD)</Label>
+            <Label htmlFor="amount">Amount (INR)</Label>
             <Input id="amount" type="number" placeholder="50.00" />
           </div>
         </div>

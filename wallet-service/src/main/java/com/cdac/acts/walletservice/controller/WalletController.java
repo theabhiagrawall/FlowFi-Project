@@ -22,6 +22,10 @@ public class WalletController {
         this.walletService = walletService;
     }
 
+    @GetMapping
+    public String Home(){
+        return "APT gate way found its way to this controller :) 🥂🥂🥂";
+    }
 
     @PostMapping
     public ResponseEntity<WalletDto> createWallet(@RequestBody CreateWalletRequest request) {

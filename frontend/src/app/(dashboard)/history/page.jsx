@@ -46,7 +46,7 @@ export default function HistoryPage() {
     const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'INR',
     }).format(amount);
 
     const getTransactionParty = (transaction) => {

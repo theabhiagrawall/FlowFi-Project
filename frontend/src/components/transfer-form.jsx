@@ -67,7 +67,7 @@ export function TransferForm() {
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Amount (USD)</FormLabel>
+              <FormLabel>Amount (INR)</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="0.00" {...field} />
               </FormControl>

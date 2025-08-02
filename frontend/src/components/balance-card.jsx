@@ -12,12 +12,12 @@ import { getAuthenticatedUser } from '@/lib/data.js';
 import { DepositDialog } from './deposit-dialog.jsx';
 import { WithdrawDialog } from './withdraw-dialog.jsx';
 
-export function BalanceCard() {
+export function BalanceCard(props) {
   const user = getAuthenticatedUser();
-  const formattedBalance = new Intl.NumberFormat('en-US', {
+  const formattedBalance = new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
-  }).format(user.balance);
+    currency: 'INR',
+  }).format(props.balance);
 
   return (
     <Card className="lg:col-span-2">

@@ -55,7 +55,7 @@ export default function UserTransactionPage() {
   const formatCurrency = (amount) =>
   new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
   }).format(amount);
 
   if (!otherUser) {
