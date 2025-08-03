@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -33,7 +32,7 @@ public class AuthService {
     public AuthResponse registerUser(RegisterRequest request) {
         Optional<User> existingUser = userRepository.findByPhoneNumber(request.getPhoneNumber());
         if (existingUser.isPresent()) {
-            return new AuthResponse(null, "User already exists with this phone number.");
+            return new AuthResponse(null, "User already exists with this phone number.", null, null, null, null, null, null, null, null, null);
         }
 
         User user = new User();
@@ -44,12 +43,15 @@ public class AuthService {
         user.setStatus("active");
         user.setEmailVerified(false);
         user.setKycVerified(false);
+        user.setRole("user");
 
         userRepository.save(user);
 
-
         String token = jwtUtil.generateToken(user.getId().toString());
-        return new AuthResponse(token, "Registration successful.");
+
+        return new AuthResponse(token, "Registration successful.", user.getId(), user.getPhoneNumber(),
+                user.getEmail(), user.getName(), user.getStatus(), user.getEmailVerified(),
+                user.getKycVerified(), user.getRole(), user.getCreatedAt());
     }
 
     public AuthResponse authenticateUser(AuthRequest request) {
@@ -61,6 +63,9 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String token = jwtUtil.generateToken(user.getId().toString());
-        return new AuthResponse(token, "Login successful.");
+
+        return new AuthResponse(token, "Login successful.", user.getId(), user.getPhoneNumber(),
+                user.getEmail(), user.getName(), user.getStatus(), user.getEmailVerified(),
+                user.getKycVerified(), user.getRole(), user.getCreatedAt());
     }
 }

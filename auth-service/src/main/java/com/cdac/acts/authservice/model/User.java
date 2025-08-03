@@ -29,6 +29,10 @@ public class User {
 
     private String status;
 
+    @Column(nullable = false)
+    private String role = "user";
+
+
     private Boolean emailVerified;
 
     private Boolean kycVerified;
@@ -83,6 +87,15 @@ public class User {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
 
     public Boolean getEmailVerified() {
         return emailVerified;
