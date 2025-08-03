@@ -79,6 +79,16 @@ services:
     networks:
       - flownet
 
+  transaction-service:
+    build: ./transaction-service
+    container_name: transaction-service
+    ports:
+      - "8089:8089"
+    depends_on:
+      - api-gateway
+    networks:
+      - flownet
+
 
   frontend:
     build:
