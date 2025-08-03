@@ -17,13 +17,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @ToString
 public class TransactionRequest {
-     @NotNull
-    private UUID userId;
+    @NotNull
+    private UUID walletId;
 
-     @NotNull
-     @Positive
+    @NotNull
+    @Positive
     private BigDecimal amount;
-
-    // future if  transaction logic becomes more complex, e.g.:
-    // private String description;
 }
