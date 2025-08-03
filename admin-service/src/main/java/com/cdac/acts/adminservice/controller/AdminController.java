@@ -17,7 +17,7 @@ public class AdminController {
     private AdminService adminService;
 
     // Show all users for the table (initial screen)
-    @GetMapping("/users")
+    @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         return ResponseEntity.ok(adminService.getAllUsers());
     }
