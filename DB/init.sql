@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     status VARCHAR(20) CHECK (status IN ('active', 'inactive', 'blocked')),
     email_verified BOOLEAN DEFAULT FALSE,
     kyc_verified BOOLEAN DEFAULT FALSE,
+    role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
     password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
