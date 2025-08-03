@@ -51,7 +51,7 @@ export default function DashboardSidebar() {
             <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2H4V6z" />
             <path d="M12 15h.01" />
           </svg>
-          <span className="sr-only">flow fi</span>
+          <span className="sr-only">FlowFi</span>
         </Link>
         <TooltipProvider>
           {navItems.map((item) => (

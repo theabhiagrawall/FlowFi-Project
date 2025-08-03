@@ -24,6 +24,9 @@ const formSchema = z.object({
   email: z.string().email({
     message: 'Please enter a valid email address.',
   }),
+  phone: z.string().length(10, {
+    message: 'Please Enter a Valid Phone Number.',
+  }).regex(/^\d+$/, { message: 'Phone number must contain only digits.' }),
   password: z.string().min(8, {
     message: 'Password must be at least 8 characters.',
   }),
@@ -36,6 +39,7 @@ export function SignupForm() {
     defaultValues: {
       name: '',
       email: '',
+      phone: '',
       password: '',
     },
   });
@@ -51,7 +55,7 @@ export function SignupForm() {
     <Card>
       <CardHeader>
         <CardTitle className="font-headline">Create an Account</CardTitle>
-        <CardDescription>Enter your details to get started with flow fi.</CardDescription>
+        <CardDescription>Enter your details to get started with FlowFi.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -77,6 +81,19 @@ export function SignupForm() {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input placeholder="name@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="1234567890" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

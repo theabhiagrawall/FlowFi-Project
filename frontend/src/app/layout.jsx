@@ -4,7 +4,7 @@ import { ThemeProvider } from '@/components/theme-provider.jsx';
 
 
 export const metadata = {
-  title: 'flow fi',
+  title: 'FlowFi',
   description: 'A modern banking experience',
 };
 
