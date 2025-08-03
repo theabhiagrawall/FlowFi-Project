@@ -17,10 +17,10 @@ public interface WalletService {
     WalletDto getWalletByUserId(UUID userId);
 
     // Add money (credit) to wallet
-    WalletDto creditWallet(UUID userId, BigDecimal amount);
+    WalletDto creditWallet(UUID walletId, BigDecimal amount);
 
     // Deduct money (debit) from wallet
-    WalletDto debitWallet(UUID userId, BigDecimal amount);
+    WalletDto debitWallet(UUID walletId, BigDecimal amount);
 
     // Delete wallet (optional but keeping it here if needed will add this)
     void deleteWallet(UUID walletId);

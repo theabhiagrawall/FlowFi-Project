@@ -1,19 +1,17 @@
 package com.cdac.acts.authservice.dto;
 
 public class AuthResponse {
-
     private String token;
     private String message;
 
-    public AuthResponse() {
-        // Default constructor
-    }
+    public AuthResponse() {}
 
     public AuthResponse(String token, String message) {
         this.token = token;
         this.message = message;
     }
 
+    // Getters and Setters
     public String getToken() {
         return token;
     }

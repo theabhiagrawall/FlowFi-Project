@@ -49,13 +49,13 @@ public class WalletController {
 
     @PostMapping("/credit")
     public ResponseEntity<WalletDto> creditWallet(@RequestBody TransactionRequest request) {
-        WalletDto updatedWallet = walletService.creditWallet(request.getUserId(), request.getAmount());
+        WalletDto updatedWallet = walletService.creditWallet(request.getWalletId(), request.getAmount());
         return ResponseEntity.ok(updatedWallet);
     }
 
     @PostMapping("/debit")
     public ResponseEntity<WalletDto> debitWallet(@RequestBody TransactionRequest request) {
-        WalletDto updatedWallet = walletService.debitWallet(request.getUserId(), request.getAmount());
+        WalletDto updatedWallet = walletService.debitWallet(request.getWalletId(), request.getAmount());
         return ResponseEntity.ok(updatedWallet);
     }
 

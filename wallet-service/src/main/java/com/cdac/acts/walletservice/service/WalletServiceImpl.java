@@ -71,14 +71,13 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    public WalletDto creditWallet(UUID userId, BigDecimal amount) {
+    public WalletDto creditWallet(UUID walletId, BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidAmountException("Credit amount must be positive.");
         }
 
-        // Find wallet by user ID, throw WalletNotFoundException if not found
-        Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found for user ID: " + userId));
+        Wallet wallet = walletRepository.findById(walletId)
+                .orElseThrow(() -> new WalletNotFoundException("Wallet not found for ID: " + walletId));
 
         wallet.setBalance(wallet.getBalance().add(amount));
         wallet.setUpdatedAt(LocalDateTime.now()); // Update timestamp
@@ -89,19 +88,18 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    public WalletDto debitWallet(UUID userId, BigDecimal amount) {
+    public WalletDto debitWallet(UUID walletId, BigDecimal amount) {
         // Validate amount using custom exception
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidAmountException("Debit amount must be positive.");
         }
 
-        // Find wallet by user ID, throw WalletNotFoundException if not found
-        Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseThrow(() -> new WalletNotFoundException("Wallet not found for user ID: " + userId));
+        Wallet wallet = walletRepository.findById(walletId)
+                .orElseThrow(() -> new WalletNotFoundException("Wallet not found for ID: " + walletId));
 
         // Check for insufficient balance using custom exception
         if (wallet.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientFundsException("Insufficient funds in wallet for user ID: " + userId + ". Available: " + wallet.getBalance() + ", Requested: " + amount);
+            throw new InsufficientFundsException("Insufficient funds in wallet ID: " + walletId + ". Available: " + wallet.getBalance() + ", Requested: " + amount);
         }
 
         wallet.setBalance(wallet.getBalance().subtract(amount));

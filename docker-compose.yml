@@ -44,6 +44,10 @@ services:
     container_name: auth-service
     ports:
       - "8081:8081"
+    depends_on:
+      - api-gateway
+    networks:
+      - flownet
 
   admin-service:
     build: ./admin-service
@@ -60,7 +64,6 @@ services:
     container_name: wallet-service
     ports:
       - "8082:8082"
-
     depends_on:
       - api-gateway
     networks:
