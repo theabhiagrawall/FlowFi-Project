@@ -1,6 +1,9 @@
 package com.cdac.acts.authservice.model;
 
 import jakarta.persistence.*;
+
+
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -8,60 +11,31 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @Column(nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(updatable = false, nullable = false)
     private UUID id;
 
     @Column(nullable = false, unique = true)
     private String phoneNumber;
 
-    @Column(unique = true)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
     private String name;
 
-//    @Column
-//    private String password; // Plain text or masked (optional)
-
-    @Column(name = "password_hash", nullable = false)
+    @Column(nullable = false)
     private String passwordHash;
 
-    @Column
     private String status;
 
-    @Column(name = "email_verified")
-    private boolean emailVerified;
+    private Boolean emailVerified;
 
-    @Column(name = "kyc_verified")
-    private boolean kycVerified;
+    private Boolean kycVerified;
 
-    @Column(name = "created_at")
-    private String createdAt;
-
-    @PrePersist
-    public void prePersist() {
-        this.id = UUID.randomUUID();
-        this.createdAt = java.time.LocalDateTime.now().toString();
-    }
-
-    // Constructors
-    public User() {}
-
-    public User(String phoneNumber, String email, String name,
-                String passwordHash, String status, boolean emailVerified,
-                boolean kycVerified, String createdAt) {
-        this.phoneNumber = phoneNumber;
-        this.email = email;
-        this.name = name;
-        this.passwordHash = passwordHash;
-        this.status = status;
-        this.emailVerified = emailVerified;
-        this.kycVerified = kycVerified;
-        this.createdAt = createdAt;
-    }
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     // Getters and Setters
-
     public UUID getId() {
         return id;
     }
@@ -94,14 +68,6 @@ public class User {
         this.name = name;
     }
 
-//    public String getPassword() {
-//        return password;
-//    }
-//
-//    public void setPassword(String password) {
-//        this.password = password;
-//    }
-
     public String getPasswordHash() {
         return passwordHash;
     }
@@ -118,27 +84,27 @@ public class User {
         this.status = status;
     }
 
-    public boolean isEmailVerified() {
+    public Boolean getEmailVerified() {
         return emailVerified;
     }
 
-    public void setEmailVerified(boolean emailVerified) {
+    public void setEmailVerified(Boolean emailVerified) {
         this.emailVerified = emailVerified;
     }
 
-    public boolean isKycVerified() {
+    public Boolean getKycVerified() {
         return kycVerified;
     }
 
-    public void setKycVerified(boolean kycVerified) {
+    public void setKycVerified(Boolean kycVerified) {
         this.kycVerified = kycVerified;
     }
 
-    public String getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 }

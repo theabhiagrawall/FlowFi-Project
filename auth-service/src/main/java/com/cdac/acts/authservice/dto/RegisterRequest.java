@@ -1,24 +1,12 @@
 package com.cdac.acts.authservice.dto;
 
 public class RegisterRequest {
-
     private String phoneNumber;
     private String email;
     private String name;
     private String password;
 
-    // Constructors
-    public RegisterRequest() {}
-
-    public RegisterRequest(String phoneNumber, String email, String name, String password) {
-        this.phoneNumber = phoneNumber;
-        this.email = email;
-        this.name = name;
-        this.password = password;
-    }
-
-    // Getters and setters
-
+    // Getters and Setters
     public String getPhoneNumber() {
         return phoneNumber;
     }
