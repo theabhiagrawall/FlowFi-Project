@@ -49,6 +49,16 @@ services:
     networks:
       - flownet
 
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - api-gateway
+    networks:
+      - flownet
+
   admin-service:
     build: ./admin-service
     container_name: admin-service
