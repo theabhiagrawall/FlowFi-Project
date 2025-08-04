@@ -14,26 +14,21 @@ import {
   FormDescription,
 } from '@/components/ui/form.jsx';
 import { Input } from '@/components/ui/input.jsx';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select.jsx"
 import { useToast } from '@/hooks/use-toast.js';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert.jsx';
 import { CheckCircle, Clock, XCircle } from 'lucide-react';
 import { getAuthenticatedUser } from '@/lib/data.js';
-import { useWatch } from 'react-hook-form';
 
 const formSchema = z.object({
-  documentType: z.string({
-    required_error: "Please select a document type.",
-  }),
-  documentNumber: z.string()
-    .min(6, "Document number must be at least 6 characters.")
-    .max(20, "Too long!"),
+  aadhar: z
+    .string()
+    .regex(/^\d{12}$/, "Aadhar must be a 12-digit number."),
+  pan: z
+    .string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, "Enter valid PAN (e.g., ABCDE1234F)."),
+  document: z
+    .any()
+    .refine((files) => files?.length === 1, "Document is required."),
 });
 
 export function KycForm() {
@@ -45,20 +40,14 @@ export function KycForm() {
     resolver: zodResolver(formSchema),
   });
 
-  const selectedType = useWatch({
-    control: form.control,
-    name: 'documentType',
-  });
-
   function onSubmit(values) {
     console.log(values);
     toast({
       title: 'KYC Submitted',
-      description: 'Your document number has been submitted and is under review.',
+      description: 'Your documents are under review. This may take up to 24 hours.',
     });
   }
 
-  // KYC status alerts
   if (kycStatus === 'verified') {
     return (
       <Alert variant="default" className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300">
@@ -77,7 +66,7 @@ export function KycForm() {
         <Clock className="h-5 w-5" />
         <AlertTitle className="font-headline">Pending Review</AlertTitle>
         <AlertDescription>
-          Your documents have been submitted and are currently under review.
+          Your documents have been submitted and are currently under review. We'll notify you once the process is complete.
         </AlertDescription>
       </Alert>
     );
@@ -100,49 +89,48 @@ export function KycForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
-          name="documentType"
+          name="aadhar"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Document Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a document type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="aadhar">Aadhar Card</SelectItem>
-                  <SelectItem value="pan">PAN Card</SelectItem>
-                  <SelectItem value="passport">Passport</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Aadhar Card Number</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter 12-digit Aadhar number" {...field} maxLength={12} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {selectedType && (
-          <FormField
-            control={form.control}
-            name="documentNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {selectedType === 'aadhar' && 'Aadhar Number'}
-                  {selectedType === 'pan' && 'PAN Number'}
-                  {selectedType === 'passport' && 'Passport Number'}
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your ID number" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Ensure the number matches the selected ID.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <FormField
+          control={form.control}
+          name="pan"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>PAN Card Number</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter PAN (e.g. ABCDE1234F)" {...field} maxLength={10} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="document"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Upload Document</FormLabel>
+              <FormControl>
+                <Input type="file" onChange={(e) => field.onChange(e.target.files)} />
+              </FormControl>
+              <FormDescription>
+                Please upload a clear image of your selected document.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Button type="submit">Submit for Verification</Button>
       </form>

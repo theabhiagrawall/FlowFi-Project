@@ -22,6 +22,8 @@ const formSchema = z.object({
     message: 'Name must be at least 2 characters.',
   }),
   email: z.string().email(),
+  phone: z.string()
+    .regex(/^\d{10}$/, 'Phone number must be 10 digits'),
   profilePicture: z.any().optional(),
 });
 
@@ -34,6 +36,7 @@ export function SettingsForm() {
     defaultValues: {
       name: user.name,
       email: user.email,
+      phone: user.phone || '', // default empty if not present
     },
   });
 
@@ -49,22 +52,22 @@ export function SettingsForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
-            control={form.control}
-            name="profilePicture"
-            render={({ field }) => (
-                <FormItem className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20">
-                        <AvatarImage src={user.avatar} data-ai-hint="woman portrait"/>
-                        <AvatarFallback>A</AvatarFallback>
-                    </Avatar>
-                    <div className="grid gap-1.5">
-                    <FormLabel>Profile Picture</FormLabel>
-                    <FormControl>
-                        <Input type="file" className="w-full" onChange={(e) => field.onChange(e.target.files)} />
-                    </FormControl>
-                    </div>
-                </FormItem>
-            )}
+          control={form.control}
+          name="profilePicture"
+          render={({ field }) => (
+            <FormItem className="flex items-center gap-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={user.avatar} data-ai-hint="woman portrait" />
+                <AvatarFallback>A</AvatarFallback>
+              </Avatar>
+              <div className="grid gap-1.5">
+                <FormLabel>Profile Picture</FormLabel>
+                <FormControl>
+                  <Input type="file" className="w-full" onChange={(e) => field.onChange(e.target.files)} />
+                </FormControl>
+              </div>
+            </FormItem>
+          )}
         />
         <FormField
           control={form.control}
@@ -74,6 +77,19 @@ export function SettingsForm() {
               <FormLabel>Full Name</FormLabel>
               <FormControl>
                 <Input placeholder="Your name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input placeholder="10-digit mobile number" maxLength={10} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
