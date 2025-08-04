@@ -13,13 +13,20 @@ import {
   FormMessage,
 } from '@/components/ui/form.jsx';
 import { Input } from '@/components/ui/input.jsx';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.jsx';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card.jsx';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
-  email: z.string().email({
-    message: 'Please enter a valid email address.',
+  phone: z.string().length(12, {
+    message: 'Please enter a valid 12-digit phone number.',
   }),
   password: z.string().min(8, {
     message: 'Password must be at least 8 characters.',
@@ -31,15 +38,14 @@ export function LoginForm() {
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      phone: '',
       password: '',
     },
   });
 
   function onSubmit(values) {
     console.log(values);
-    // In a real app, you'd handle authentication here.
-    // For simulation, we'll just redirect to the dashboard.
+    // ✅ Simulated login process
     router.push('/dashboard');
   }
 
@@ -47,19 +53,21 @@ export function LoginForm() {
     <Card>
       <CardHeader>
         <CardTitle className="font-headline">Welcome Back</CardTitle>
-        <CardDescription>Enter your credentials to access your account.</CardDescription>
+        <CardDescription>
+          Enter your credentials to access your account.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="email"
+              name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" {...field} />
+                    <Input placeholder="781764982400" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
