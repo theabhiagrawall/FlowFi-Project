@@ -66,7 +66,7 @@ export function LoginForm() {
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="781764982400" {...field} />
+                    <Input placeholder="7817649824" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
