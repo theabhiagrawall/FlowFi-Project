@@ -1,10 +1,6 @@
 package com.cdac.acts.adminservice.dto;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-public class UserDTO {
-    private UUID id;
+public class UpdateUserRequest {
     private String name;
     private String email;
     private String phoneNumber;
@@ -12,17 +8,8 @@ public class UserDTO {
     private boolean emailVerified;
     private boolean kycVerified;
     private String role;           // "admin", "user"
-    private LocalDateTime createdAt;
 
     // Getters and Setters
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
 
     public String getName() {
         return name;
@@ -78,13 +65,5 @@ public class UserDTO {
 
     public void setRole(String role) {
         this.role = role;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
     }
 }

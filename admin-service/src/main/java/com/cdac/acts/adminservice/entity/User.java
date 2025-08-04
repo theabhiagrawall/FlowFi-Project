@@ -1,48 +1,115 @@
 package com.cdac.acts.adminservice.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 import java.util.UUID;
 
 @Entity
 @Table(name = "users")
 public class User {
+
     @Id
     private UUID id;
+
+    @Column(name = "phone_number", nullable = false, unique = true)
     private String phoneNumber;
+
     private String email;
     private String name;
-    private String status;
+
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
     private boolean emailVerified;
     private boolean kycVerified;
-    private String role;
-    private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @Column(name = "password_hash")
+    private String passwordHash;
+
+    private Timestamp createdAt;
 
     // Getters and Setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
 
-    public String getPhoneNumber() { return phoneNumber; }
-    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    public UUID getId() {
+        return id;
+    }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
 
-    public boolean isEmailVerified() { return emailVerified; }
-    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+    public String getEmail() {
+        return email;
+    }
 
-    public boolean isKycVerified() { return kycVerified; }
-    public void setKycVerified(boolean kycVerified) { this.kycVerified = kycVerified; }
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+    public String getName() {
+        return name;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public boolean isKycVerified() {
+        return kycVerified;
+    }
+
+    public void setKycVerified(boolean kycVerified) {
+        this.kycVerified = kycVerified;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
 }
