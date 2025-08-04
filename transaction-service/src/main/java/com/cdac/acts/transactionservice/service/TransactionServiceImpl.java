@@ -21,10 +21,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.cdac.acts.transactionservice.service.TransactionSpecification.*;
@@ -118,8 +115,11 @@ public class TransactionServiceImpl implements TransactionService {
     public List<TransactionResponse> getTransactionsByUserId(UUID userId) {
         WalletResponse wallet = restTemplate.getForObject(WALLET_SERVICE_URL + "/user/" + userId, WalletResponse.class);
 
+        // reversing the order for newest first.
         if (wallet != null && wallet.getId() != null) {
-            return getTransactions(wallet.getId(), null, null, null, null);
+            List<TransactionResponse> allTransactions =  getTransactions(wallet.getId(), null, null, null, null);
+            Collections.reverse(allTransactions);
+            return allTransactions;
         }
         return List.of();
     }

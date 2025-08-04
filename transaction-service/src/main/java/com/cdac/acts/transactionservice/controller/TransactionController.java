@@ -32,6 +32,7 @@ public class TransactionController {
 
         // SECURITY WARNING: This is insecure. The sender's ID should come
         // from a security token, not the request body.
+        // AS for now we will be using the request body for simplicity
         TransactionResponse response = transactionService.createTransaction(
                 transactionRequest,
                 transactionRequest.getFromWalletId());
