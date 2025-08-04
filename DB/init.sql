@@ -33,12 +33,12 @@ CREATE TABLE IF NOT EXISTS wallets (
 
 -- Transaction Service
 CREATE TABLE IF NOT EXISTS transactions (
-                                            id UUID PRIMARY KEY,
-                                            from_wallet_id UUID NOT NULL,
-                                            to_wallet_id UUID NOT NULL,
-                                            amount DECIMAL(12,2) NOT NULL,
-    type VARCHAR(20) CHECK (type IN ('transfer', 'deposit', 'withdrawal')),
-    status VARCHAR(10) CHECK (status IN ('pending', 'success', 'failed')),
+    id UUID PRIMARY KEY,
+    from_wallet_id UUID NOT NULL,
+    to_wallet_id UUID NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    type VARCHAR(20) CHECK (type IN ('TRANSFER','DEPOSIT','WITHDRAWAL')),
+    status VARCHAR(10) CHECK (status IN ('PENDING','SUCCESS','FAILED')),
     category VARCHAR(50) DEFAULT 'Uncategorized',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     description TEXT
@@ -118,8 +118,8 @@ WITH all_wallets AS (
              (SELECT id FROM all_wallets ORDER BY RANDOM() LIMIT 1) AS from_w,
         (SELECT id FROM all_wallets ORDER BY RANDOM() LIMIT 1) AS to_w,
         ROUND((RANDOM() * 1000 + 10)::numeric, 2) AS amt,
-        (ARRAY['transfer', 'deposit', 'withdrawal'])[floor(random() * 3) + 1] AS txn_type,
-        (ARRAY['success', 'failed', 'pending'])[floor(random() * 3) + 1] AS txn_status,
+        (ARRAY['TRANSFER','DEPOSIT','WITHDRAWAL'])[floor(random() * 3) + 1] AS txn_type,
+        (ARRAY['PENDING','SUCCESS','FAILED'])[floor(random() * 3) + 1] AS txn_status,
         (ARRAY['Groceries', 'Utilities', 'Rent', 'Entertainment', 'Shopping', 'Travel', 'Food', 'Salary', 'Investment', 'Uncategorized'])[floor(random() * 10) + 1] AS txn_category,
         CASE
             WHEN (RANDOM() < 0.3) THEN NULL

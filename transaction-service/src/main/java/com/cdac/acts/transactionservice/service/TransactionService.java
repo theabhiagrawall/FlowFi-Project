@@ -2,22 +2,29 @@ package com.cdac.acts.transactionservice.service;
 
 import com.cdac.acts.transactionservice.dto.TransactionRequest;
 import com.cdac.acts.transactionservice.dto.TransactionResponse;
+import com.cdac.acts.transactionservice.enums.TransactionStatus;
+import com.cdac.acts.transactionservice.enums.TransactionType;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+@Service
 public interface TransactionService {
-    /**
-     * Creates a new transaction between two wallets.
-     * @param transactionRequest The request DTO containing transaction details.
-     * @param fromWalletId The wallet ID of the user initiating the transaction.
-     * @return A DTO of the completed transaction.
-     */
+
     TransactionResponse createTransaction(TransactionRequest transactionRequest, UUID fromWalletId);
 
-    /**
-     * Retrieves the transaction history for a specific wallet.
-     * @param walletId The ID of the wallet.
-     * @return A list of transaction DTOs.
-     */
-    List<TransactionResponse> getTransactionsByWalletId(UUID walletId);
+    //  flexible filtering
+    List<TransactionResponse> getTransactions(UUID walletId, TransactionType type, TransactionStatus status, LocalDate startDate, LocalDate endDate);
+
+    // New method to get a single transaction by its ID
+    Optional<TransactionResponse> getTransactionById(UUID transactionId);
+
+    //  getting transactions by userId (calls wallet-service)
+    List<TransactionResponse> getTransactionsByUserId(UUID userId);
+
+    //  soft-deleting a transaction
+    void deleteTransaction(UUID transactionId);
 }
