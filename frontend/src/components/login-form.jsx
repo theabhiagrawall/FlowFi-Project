@@ -25,8 +25,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
-  phone: z.string().length(12, {
-    message: 'Please enter a valid 12-digit phone number.',
+  phone: z.string().length(10, {
+    message: 'Please enter a valid 10-digit phone number.',
   }),
   password: z.string().min(8, {
     message: 'Password must be at least 8 characters.',
@@ -45,7 +45,6 @@ export function LoginForm() {
 
   function onSubmit(values) {
     console.log(values);
-    // ✅ Simulated login process
     router.push('/dashboard');
   }
 
