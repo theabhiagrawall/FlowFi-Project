@@ -41,7 +41,7 @@ export default function AdminPage() {
   const formatCurrency = (amount) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "INR",
+      currency: "USD",
     }).format(amount);
   
   const getKycStatusVariant = (status) => {
@@ -113,7 +113,9 @@ export default function AdminPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View User Details</DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/users/${user.id}`}>View User Details</Link>
+                        </DropdownMenuItem>
                         {user.kycStatus === 'pending' && (
                            <>
                             <DropdownMenuSeparator />
