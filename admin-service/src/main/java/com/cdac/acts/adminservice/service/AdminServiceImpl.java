@@ -7,6 +7,7 @@ import com.cdac.acts.adminservice.entity.KycInfo;
 import com.cdac.acts.adminservice.entity.Role;
 import com.cdac.acts.adminservice.entity.Status;
 import com.cdac.acts.adminservice.entity.User;
+import com.cdac.acts.adminservice.exception.UserNotFoundException;
 import com.cdac.acts.adminservice.repository.KycInfoRepository;
 import com.cdac.acts.adminservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -66,41 +67,41 @@ public class AdminServiceImpl implements AdminService {
         kyc.setUser(user);
         kyc.setPanNumber(dto.getPanNumber());
 
-        // Only set if not null to avoid overwriting with null accidentally
         if (dto.getAadhaarNumber() != null) {
             kyc.setAadharNumber(dto.getAadhaarNumber());
         }
 
         kyc.setVerified(dto.isVerified());
-
         kycInfoRepository.save(kyc);
+
+        // Sync with users table
+        user.setKycVerified(dto.isVerified());
+        userRepository.save(user);
 
         return existingKyc.isPresent() ? "KYC info updated successfully." : "KYC info added successfully.";
     }
 
 
-
     @Override
-    public void updateUserDetails(UUID userId, UpdateUserRequest request) {
+    public void updateUserByAdmin(UUID userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
-        user.setName(request.getName());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setEmail(request.getEmail());
-
-        // Use standard valueOf since the incoming strings are lowercase
+        // Update user fields
         user.setStatus(Status.valueOf(request.getStatus()));
         user.setRole(Role.valueOf(request.getRole()));
-
         user.setEmailVerified(request.isEmailVerified());
         user.setKycVerified(request.isKycVerified());
+
         userRepository.save(user);
 
-        kycInfoRepository.findByUserId(userId).ifPresent(kycInfo -> {
+        // Also update KYC info table if present
+        Optional<KycInfo> kycInfoOpt = kycInfoRepository.findByUserId(userId);
+        if (kycInfoOpt.isPresent()) {
+            KycInfo kycInfo = kycInfoOpt.get();
             kycInfo.setVerified(request.isKycVerified());
             kycInfoRepository.save(kycInfo);
-        });
+        }
     }
 }
 

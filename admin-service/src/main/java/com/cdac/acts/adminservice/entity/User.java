@@ -20,7 +20,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Status status;
 
+    @Column(name = "email_verified")
     private boolean emailVerified;
+
+    @Column(name = "kyc_verified")
     private boolean kycVerified;
 
     @Enumerated(EnumType.STRING)

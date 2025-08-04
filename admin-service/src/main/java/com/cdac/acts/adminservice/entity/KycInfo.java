@@ -9,7 +9,6 @@ public class KycInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(nullable = false, updatable = false)
     private UUID id;
 
     @OneToOne
@@ -20,12 +19,12 @@ public class KycInfo {
     private String panNumber;
 
     @Column(name = "aadhaar_number")
-    private String aadharNumber; // matches DB column spelling
+    private String aadharNumber;
 
-    @Column(name = "verified")
-    private boolean verified;
+    private boolean verified = false;
 
     // Getters and Setters
+
     public UUID getId() {
         return id;
     }

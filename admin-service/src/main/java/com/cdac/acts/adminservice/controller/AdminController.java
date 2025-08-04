@@ -32,16 +32,21 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getUserById(id));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<String> updateUser(@PathVariable UUID id, @RequestBody UpdateUserRequest request) {
-        adminService.updateUserDetails(id, request);
-        return ResponseEntity.ok("User updated successfully");
+    @PutMapping("/users/{id}")
+    public ResponseEntity<String> updateUserByAdmin(@PathVariable UUID id,
+                                                    @RequestBody UpdateUserRequest request) {
+        adminService.updateUserByAdmin(id, request);
+        return ResponseEntity.ok("User updated successfully.");
     }
 
 
-    @PostMapping("/kyc/{userId}")
-    public String addOrUpdateKyc(@PathVariable UUID userId, @RequestBody KycInfoRequest request) {
-        return adminService.addOrUpdateKycInfo(userId, request);
+
+    @PostMapping("/kyc/{id}")
+    public ResponseEntity<String> addOrUpdateKyc(
+            @PathVariable("id") UUID userId,
+            @RequestBody KycInfoRequest kycInfoRequest) {
+        String response = adminService.addOrUpdateKycInfo(userId, kycInfoRequest);
+        return ResponseEntity.ok(response);
     }
 
 

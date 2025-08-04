@@ -3,9 +3,9 @@ package com.cdac.acts.adminservice.dto;
 public class KycInfoRequest {
     private String panNumber;
     private String aadhaarNumber;
-    private boolean verified;
+    private boolean verified = false;
 
-    // Getters and Setters
+    // Getters and setters
     public String getPanNumber() {
         return panNumber;
     }

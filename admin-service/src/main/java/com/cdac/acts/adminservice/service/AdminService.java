@@ -15,6 +15,5 @@ public interface AdminService {
     void deleteUser(UUID id); // From user-service
 
     String addOrUpdateKycInfo(UUID userId, KycInfoRequest dto);
-
-    void updateUserDetails(UUID userId, UpdateUserRequest request);
+    void updateUserByAdmin(UUID userId, UpdateUserRequest request);
 }
