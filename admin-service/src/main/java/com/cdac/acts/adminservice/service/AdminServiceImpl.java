@@ -68,7 +68,7 @@ public class AdminServiceImpl implements AdminService {
         kyc.setPanNumber(dto.getPanNumber());
 
         if (dto.getAadhaarNumber() != null) {
-            kyc.setAadharNumber(dto.getAadhaarNumber());
+            kyc.setAadhaarNumber(dto.getAadhaarNumber());
         }
 
         kyc.setVerified(dto.isVerified());

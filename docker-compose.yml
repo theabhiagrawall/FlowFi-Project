@@ -76,6 +76,8 @@ services:
     environment:
       - USER_SERVICE_NAME=user-service
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-discovery:8761/eureka
+    volumes:
+      - D:/authentication-service/Flow-Fi/uploads/kyc-docs:/app/uploads/kyc-docs
     networks:
       - flownet
     extra_hosts:

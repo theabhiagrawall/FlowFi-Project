@@ -19,12 +19,15 @@ public class KycInfo {
     private String panNumber;
 
     @Column(name = "aadhaar_number")
-    private String aadharNumber;
+    private String aadhaarNumber;
 
-    private boolean verified = false;
+    @Column(name = "verified")
+    private boolean verified;
+
+    @Column(name = "document_path", nullable = true)
+    private String documentPath;
 
     // Getters and Setters
-
     public UUID getId() {
         return id;
     }
@@ -49,12 +52,12 @@ public class KycInfo {
         this.panNumber = panNumber;
     }
 
-    public String getAadharNumber() {
-        return aadharNumber;
+    public String getAadhaarNumber() {
+        return aadhaarNumber;
     }
 
-    public void setAadharNumber(String aadharNumber) {
-        this.aadharNumber = aadharNumber;
+    public void setAadhaarNumber(String aadhaarNumber) {
+        this.aadhaarNumber = aadhaarNumber;
     }
 
     public boolean isVerified() {
@@ -63,5 +66,13 @@ public class KycInfo {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public String getDocumentPath() {
+        return documentPath;
+    }
+
+    public void setDocumentPath(String documentPath) {
+        this.documentPath = documentPath;
     }
 }
