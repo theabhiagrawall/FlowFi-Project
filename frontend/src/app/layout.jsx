@@ -5,7 +5,7 @@ import { AuthProvider } from '@/context/auth-context.js';
 
 
 export const metadata = {
-  title: 'flow fi',
+  title: 'FlowFi',
   description: 'A modern banking experience',
 };
 
