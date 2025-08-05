@@ -1,4 +1,4 @@
-// This is a utility file for making API calls.
+
 
 /**
  * A wrapper around the native fetch API.
