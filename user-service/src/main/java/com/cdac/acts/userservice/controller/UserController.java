@@ -1,5 +1,6 @@
 package com.cdac.acts.userservice.controller;
 
+import com.cdac.acts.userservice.dto.KycInfoRequest;
 import com.cdac.acts.userservice.dto.UpdateUserRequest;
 import com.cdac.acts.userservice.dto.UserResponse;
 import com.cdac.acts.userservice.service.UserService;
@@ -57,5 +58,13 @@ public class UserController {
     public ResponseEntity<List<UserResponse>> searchUsersByEmailPrefix(@RequestParam String email) {
         List<UserResponse> users = userService.searchUsersByEmailPrefix(email);
         return ResponseEntity.ok(users);
+    }
+
+    @PostMapping("/kyc/{id}")
+    public ResponseEntity<String> addOrUpdateKyc(
+            @PathVariable("id") UUID userId,
+            @RequestBody KycInfoRequest kycInfoRequest) {
+        String response = userService.addOrUpdateKycInfo(userId, kycInfoRequest);
+        return ResponseEntity.ok(response);
     }
 }
