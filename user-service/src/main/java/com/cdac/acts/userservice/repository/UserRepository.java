@@ -17,6 +17,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByPhoneNumber(String phoneNumber);
+
     @Query("SELECT u FROM User u WHERE LOWER(SUBSTRING(u.email, 1, LOCATE('@', u.email)-1)) LIKE LOWER(CONCAT(:prefix, '%'))")
     List<User> searchUsersByEmailPrefix(@Param("prefix") String prefix);
 }
