@@ -20,6 +20,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.cdac.acts.authservice.filter.JwtRequestFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.Arrays;
+
 
 @Configuration
 public class SecurityConfig {
@@ -65,18 +67,19 @@ public class SecurityConfig {
 //        };
 //    }
 
-    @Bean
     public FilterRegistrationBean<CorsFilter> corsFilterRegistration() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOriginPattern("*");  // Allow all origins (you can restrict later)
+        config.setAllowedOriginPatterns(Arrays.asList(
+                "http://frontend-container:3000", "http://localhost:3000","http://127.0.0.1:3000"
+        ));
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
 
         FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
-        bean.setOrder(0);  // Highest priority, before Spring Security
+        bean.setOrder(0);
         return bean;
     }
 }
