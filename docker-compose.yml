@@ -48,6 +48,10 @@ services:
       - "8081:8081"
     depends_on:
       - api-gateway
+      - wallet-service
+    environment:
+      - WALLET_SERVICE_NAME=wallet-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-discovery:8761/eureka
     networks:
       - flownet
     extra_hosts:
