@@ -1,10 +1,13 @@
 package com.cdac.acts.userservice.service;
 
+import com.cdac.acts.userservice.dto.KycInfoRequest;
 import com.cdac.acts.userservice.dto.UpdateUserRequest;
 import com.cdac.acts.userservice.dto.UserResponse;
 import com.cdac.acts.userservice.exception.DuplicateEmailException;
 import com.cdac.acts.userservice.exception.DuplicatePhoneNumberException;
+import com.cdac.acts.userservice.model.KycInfo;
 import com.cdac.acts.userservice.model.User;
+import com.cdac.acts.userservice.repository.KycInfoRepository;
 import com.cdac.acts.userservice.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +20,11 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final KycInfoRepository kycInfoRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, KycInfoRepository kycInfoRepository) {
         this.userRepository = userRepository;
+        this.kycInfoRepository = kycInfoRepository;
     }
 
     public Optional<UserResponse> findUserById(UUID id) {
@@ -67,6 +72,30 @@ public class UserService {
             userRepository.save(user);
             return mapToUserResponse(user);
         });
+    }
+
+    public String addOrUpdateKycInfo(UUID userId, KycInfoRequest dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Optional<KycInfo> existingKyc = kycInfoRepository.findByUserId(userId);
+        KycInfo kyc = existingKyc.orElseGet(KycInfo::new);
+
+        kyc.setUser(user);
+        kyc.setPanNumber(dto.getPanNumber());
+
+        if (dto.getAadhaarNumber() != null) {
+            kyc.setAadhaarNumber(dto.getAadhaarNumber());
+        }
+
+        kyc.setVerified(dto.isVerified());
+        kycInfoRepository.save(kyc);
+
+        // Sync with users table
+        user.setKycVerified(dto.isVerified());
+        userRepository.save(user);
+
+        return existingKyc.isPresent() ? "KYC info updated successfully." : "KYC info added successfully.";
     }
 
     public boolean deleteUser(UUID id) {

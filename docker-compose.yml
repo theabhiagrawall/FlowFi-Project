@@ -64,6 +64,8 @@ services:
       - "8083:8083"
     depends_on:
       - api-gateway
+    volumes:
+      - ./uploads/kyc-docs:/app/uploads/kyc-docs
     networks:
       - flownet
     extra_hosts:
