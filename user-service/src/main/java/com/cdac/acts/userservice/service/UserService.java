@@ -2,6 +2,8 @@ package com.cdac.acts.userservice.service;
 
 import com.cdac.acts.userservice.dto.UpdateUserRequest;
 import com.cdac.acts.userservice.dto.UserResponse;
+import com.cdac.acts.userservice.exception.DuplicateEmailException;
+import com.cdac.acts.userservice.exception.DuplicatePhoneNumberException;
 import com.cdac.acts.userservice.model.User;
 import com.cdac.acts.userservice.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -36,26 +38,30 @@ public class UserService {
 
     public Optional<UserResponse> updateUser(UUID id, UpdateUserRequest updateRequest) {
         return userRepository.findById(id).map(user -> {
-            if (updateRequest.getPhoneNumber() != null) {
-                user.setPhoneNumber(updateRequest.getPhoneNumber());
-            }
-            if (updateRequest.getEmail() != null) {
+
+            // Check for duplicate email if it's being updated
+            if (updateRequest.getEmail() != null && !updateRequest.getEmail().equals(user.getEmail())) {
+                userRepository.findByEmail(updateRequest.getEmail())
+                        .filter(existingUser -> !existingUser.getId().equals(id))
+                        .ifPresent(existingUser -> {
+                            throw new DuplicateEmailException("Email already exists!");
+                        });
                 user.setEmail(updateRequest.getEmail());
             }
+
+            // Check for duplicate phone number if it's being updated
+            if (updateRequest.getPhoneNumber() != null && !updateRequest.getPhoneNumber().equals(user.getPhoneNumber())) {
+                userRepository.findByPhoneNumber(updateRequest.getPhoneNumber())
+                        .filter(existingUser -> !existingUser.getId().equals(id))
+                        .ifPresent(existingUser -> {
+                            throw new DuplicatePhoneNumberException("Phone number already exists!");
+                        });
+                user.setPhoneNumber(updateRequest.getPhoneNumber());
+            }
+
+            // Update name if provided
             if (updateRequest.getName() != null) {
                 user.setName(updateRequest.getName());
-            }
-            if (updateRequest.getStatus() != null) {
-                user.setStatus(updateRequest.getStatus());
-            }
-            if (updateRequest.getEmailVerified() != null) {
-                user.setEmailVerified(updateRequest.getEmailVerified());
-            }
-            if (updateRequest.getKycVerified() != null) {
-                user.setKycVerified(updateRequest.getKycVerified());
-            }
-            if (updateRequest.getRole() != null) {
-                user.setRole(updateRequest.getRole());
             }
 
             userRepository.save(user);

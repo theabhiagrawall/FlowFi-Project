@@ -37,6 +37,11 @@ public class AuthService {
             throw new UserAlreadyExistsException("A user with phone number '" + request.getPhoneNumber() + "' already exists.");
         }
 
+        Optional<User> existingUserByEmail = userRepository.findByEmail(request.getEmail());
+        if (existingUserByEmail.isPresent()) {
+            throw new UserAlreadyExistsException("A user with email '" + request.getEmail() + "' already exists.");
+        }
+
         User user = new User();
         user.setPhoneNumber(request.getPhoneNumber());
         user.setEmail(request.getEmail());
