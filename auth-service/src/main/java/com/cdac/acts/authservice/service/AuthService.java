@@ -3,11 +3,13 @@ package com.cdac.acts.authservice.service;
 import com.cdac.acts.authservice.dto.AuthRequest;
 import com.cdac.acts.authservice.dto.AuthResponse;
 import com.cdac.acts.authservice.dto.RegisterRequest;
+import com.cdac.acts.authservice.exception.UserAlreadyExistsException;
 import com.cdac.acts.authservice.model.User;
 import com.cdac.acts.authservice.repository.UserRepository;
 import com.cdac.acts.authservice.security.JwtUtil;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +34,7 @@ public class AuthService {
     public AuthResponse registerUser(RegisterRequest request) {
         Optional<User> existingUser = userRepository.findByPhoneNumber(request.getPhoneNumber());
         if (existingUser.isPresent()) {
-            return new AuthResponse(null, "User already exists with this phone number.", null, null, null, null, null, null, null, null, null);
+            throw new UserAlreadyExistsException("A user with phone number '" + request.getPhoneNumber() + "' already exists.");
         }
 
         User user = new User();
@@ -58,9 +60,8 @@ public class AuthService {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getPhoneNumber(), request.getPassword())
         );
-
         User user = userRepository.findByPhoneNumber(request.getPhoneNumber())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with phone number: " + request.getPhoneNumber()));
 
         String token = jwtUtil.generateToken(user.getId().toString());
 
