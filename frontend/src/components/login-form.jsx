@@ -66,7 +66,12 @@ export function LoginForm() {
               title: 'login Successful',
               description: 'Welcome to flow fi!',
           });
-          router.push('/dashboard');
+          if(user.role === "admin"){
+              router.push('/admin');
+          }else{
+              router.push('/dashboard');
+          }
+
 
       } catch (error) {
           toast({
