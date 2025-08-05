@@ -16,13 +16,13 @@ import { Input } from '@/components/ui/input.jsx';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-// import { useAuth } from '@/context/auth-context.js'; // Uncomment to use Auth Context
-// import { apiFetch } from '@/lib/api.js'; // Uncomment to use API Fetch utility
+import { useAuth } from '@/context/auth-context.js';
+import { apiFetch } from '@/lib/api.js';
 import { useToast } from '@/hooks/use-toast.js';
 import * as React from 'react';
 
 const formSchema = z.object({
-  phone: z.string().length(10, {
+    phoneNumber: z.string().length(10, {
     message: 'Please enter a valid 10-digit phone number.',
   }),
   password: z.string().min(8, {
@@ -32,7 +32,7 @@ const formSchema = z.object({
 
 export function LoginForm() {
   const router = useRouter();
-  // const { login } = useAuth(); // Uncomment to use Auth Context
+  const { login } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -45,32 +45,38 @@ export function LoginForm() {
   });
 
   async function onSubmit(values) {
-    // setIsLoading(true);
-    // try {
-    //   // This is where you would call your backend API
-    //   const response = await apiFetch('/auth/login', {
-    //     method: 'POST',
-    //     body: JSON.stringify(values),
-    //   });
+      setIsLoading(true);
+      try {
+          const response = await fetch('http://localhost:8080/auth-service/api/auth/login', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(values),
+          });
+          const data = await response.json();
+          if (!response.ok) {
+              throw new Error(data.message || 'login failed.');
+          }
+          const { token, message, ...user } = data;
+          if(token && user) {
+              login(token, user);
+          }
+          toast({
+              title: 'login Successful',
+              description: 'Welcome to flow fi!',
+          });
+          router.push('/dashboard');
 
-    //   // Assuming the API returns a token and user data
-    //   const { token, user } = response;
-    //   login(token, user);
-
-    //   toast({
-    //     title: 'Login Successful',
-    //     description: 'Welcome back!',
-    //   });
-      router.push('/dashboard');
-    // } catch (error) {
-    //   toast({
-    //     title: 'Login Failed',
-    //     description: error.message || 'Please check your credentials and try again.',
-    //     variant: 'destructive',
-    //   });
-    // } finally {
-    //   setIsLoading(false);
-    // }
+      } catch (error) {
+          toast({
+              title: 'Login Failed',
+                  description: error.message || 'Please check your credentials and try again.',
+                  variant: 'destructive',
+          });
+      } finally {
+          setIsLoading(false);
+      }
   }
 
   return (
@@ -84,7 +90,7 @@ export function LoginForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="phone"
+              name="phoneNumber"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
