@@ -5,10 +5,15 @@ import com.cdac.acts.adminservice.dto.UpdateUserRequest;
 import com.cdac.acts.adminservice.dto.UserDTO;
 import com.cdac.acts.adminservice.entity.KycInfo;
 import com.cdac.acts.adminservice.entity.User;
+import com.cdac.acts.adminservice.entity.Wallet;
+import com.cdac.acts.adminservice.repository.KycInfoRepository;
+import com.cdac.acts.adminservice.repository.WalletRepository;
 import com.cdac.acts.adminservice.service.AdminService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,13 +22,12 @@ import java.util.UUID;
 public class AdminController {
 
     private final AdminService adminService;
-
     public AdminController(AdminService adminService) {
         this.adminService = adminService;
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
         return ResponseEntity.ok(adminService.getAllUsers());
     }
 
