@@ -105,11 +105,13 @@ public class UserService {
         }).orElse(false);
     }
 
-    public List<UserResponse> searchUsersByEmailPrefix(String prefix) {
+    public List<UserResponse> searchUsersByEmailPrefix(String prefix, UUID excludeUserId) {
         return userRepository.searchUsersByEmailPrefix(prefix).stream()
+                .filter(user -> !user.getId().equals(excludeUserId))
                 .map(this::mapToUserResponse)
                 .collect(Collectors.toList());
     }
+
 
     private UserResponse mapToUserResponse(User user) {
         UserResponse response = new UserResponse();

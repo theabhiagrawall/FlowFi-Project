@@ -4,6 +4,7 @@ import com.cdac.acts.userservice.dto.KycInfoRequest;
 import com.cdac.acts.userservice.dto.UpdateUserRequest;
 import com.cdac.acts.userservice.dto.UserResponse;
 import com.cdac.acts.userservice.service.UserService;
+import com.cdac.acts.userservice.util.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,9 +17,11 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.jwtUtil = jwtUtil;
     }
 
     @GetMapping("/{id}")
@@ -55,8 +58,14 @@ public class UserController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<UserResponse>> searchUsersByEmailPrefix(@RequestParam String email) {
-        List<UserResponse> users = userService.searchUsersByEmailPrefix(email);
+    public ResponseEntity<List<UserResponse>> searchUsersByEmailPrefix(
+            @RequestParam String email,
+            @RequestHeader("Authorization") String authHeader) {
+
+        String token = authHeader.substring(7); // Remove "Bearer "
+        UUID currentUserId = jwtUtil.extractUserId(token);
+
+        List<UserResponse> users = userService.searchUsersByEmailPrefix(email, currentUserId);
         return ResponseEntity.ok(users);
     }
 
