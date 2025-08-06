@@ -1,5 +1,6 @@
 package com.cdac.acts.adminservice.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -13,6 +14,9 @@ public class UserDTO {
     private boolean kycVerified;
     private String role;           // "admin", "user"
     private LocalDateTime createdAt;
+
+    // ✅ New field for wallet balance
+    private BigDecimal walletBalance;
 
     // Getters and Setters
 
@@ -87,4 +91,13 @@ public class UserDTO {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public BigDecimal getWalletBalance() {
+        return walletBalance;
+    }
+
+    public void setWalletBalance(BigDecimal walletBalance) {
+        this.walletBalance = walletBalance;
+    }
+
 }
