@@ -16,8 +16,9 @@ import {
 import { Input } from '@/components/ui/input.jsx';
 import { useToast } from '@/hooks/use-toast.js';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert.jsx';
-import { CheckCircle, Clock, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, Eye } from 'lucide-react';
 import { getAuthenticatedUser } from '@/lib/data.js';
+import { useState } from 'react';
 
 const formSchema = z.object({
   aadhar: z
@@ -35,6 +36,7 @@ export function KycForm() {
   const { toast } = useToast();
   const user = getAuthenticatedUser();
   const kycStatus = user.kycStatus;
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -48,6 +50,7 @@ export function KycForm() {
     });
   }
 
+  // KYC status checks
   if (kycStatus === 'verified') {
     return (
       <Alert variant="default" className="bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300">
@@ -87,6 +90,8 @@ export function KycForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+
+        {/* Aadhar Field */}
         <FormField
           control={form.control}
           name="aadhar"
@@ -101,6 +106,7 @@ export function KycForm() {
           )}
         />
 
+        {/* PAN Field */}
         <FormField
           control={form.control}
           name="pan"
@@ -115,6 +121,7 @@ export function KycForm() {
           )}
         />
 
+        {/* Document Upload + Preview Button */}
         <FormField
           control={form.control}
           name="document"
@@ -122,16 +129,38 @@ export function KycForm() {
             <FormItem>
               <FormLabel>Upload Document</FormLabel>
               <FormControl>
-                <Input type="file" onChange={(e) => field.onChange(e.target.files)} />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      field.onChange(e.target.files);
+                      if (file) {
+                        setPreviewUrl(URL.createObjectURL(file));
+                      } else {
+                        setPreviewUrl(null);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!previewUrl}
+                    onClick={() => previewUrl && window.open(previewUrl, '_blank')}
+                  >
+                    <Eye className="h-4 w-4 mr-2" /> Preview
+                  </Button>
+                </div>
               </FormControl>
               <FormDescription>
-                Please upload a clear image of your selected document.
+                Please upload a clear image or PDF of your selected document.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* Submit Button */}
         <Button type="submit">Submit for Verification</Button>
       </form>
     </Form>
