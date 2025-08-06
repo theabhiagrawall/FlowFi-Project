@@ -1,5 +1,6 @@
 package com.cdac.acts.transactionservice.controller;
 
+import com.cdac.acts.transactionservice.dto.FrequentContactDto;
 import com.cdac.acts.transactionservice.dto.TransactionRequest;
 import com.cdac.acts.transactionservice.dto.TransactionResponse;
 import com.cdac.acts.transactionservice.enums.TransactionStatus;
@@ -76,5 +77,13 @@ public class TransactionController {
     public ResponseEntity<Void> deleteTransaction(@PathVariable UUID transactionId) {
         transactionService.deleteTransaction(transactionId);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/frequent-contacts/{walletId}")
+    public ResponseEntity<List<FrequentContactDto>> getFrequentContacts(
+            @PathVariable UUID walletId,
+            @RequestParam(defaultValue = "6") int limit) {
+
+        List<FrequentContactDto> contacts = transactionService.getFrequentContacts(walletId, limit);
+        return ResponseEntity.ok(contacts);
     }
 }

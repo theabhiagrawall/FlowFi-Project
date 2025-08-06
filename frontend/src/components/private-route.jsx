@@ -12,6 +12,9 @@ export default function PrivateRoute({ children }) {
     useEffect(() => {
         if (!loading && !isAuthenticated) {
             router.push('/login');
+        }else{
+            console.log("Authenticated user ");
+            router.push("/dashboard");
         }
     }, [isAuthenticated, loading, router]);
 

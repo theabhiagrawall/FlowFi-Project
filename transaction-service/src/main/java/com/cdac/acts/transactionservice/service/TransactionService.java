@@ -1,5 +1,6 @@
 package com.cdac.acts.transactionservice.service;
 
+import com.cdac.acts.transactionservice.dto.FrequentContactDto;
 import com.cdac.acts.transactionservice.dto.TransactionRequest;
 import com.cdac.acts.transactionservice.dto.TransactionResponse;
 import com.cdac.acts.transactionservice.enums.TransactionStatus;
@@ -26,4 +27,6 @@ public interface TransactionService {
 
     //  soft-deleting a transaction
     void deleteTransaction(UUID transactionId);
+
+    List<FrequentContactDto> getFrequentContacts(UUID walletId, int limit);
 }

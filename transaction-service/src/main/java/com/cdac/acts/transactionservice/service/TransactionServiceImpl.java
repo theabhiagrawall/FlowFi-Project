@@ -1,22 +1,28 @@
 package com.cdac.acts.transactionservice.service;
 
+import com.cdac.acts.transactionservice.dto.FrequentContactDto;
 import com.cdac.acts.transactionservice.dto.TransactionRequest;
 import com.cdac.acts.transactionservice.dto.TransactionResponse;
 import com.cdac.acts.transactionservice.entity.Transaction;
 import com.cdac.acts.transactionservice.enums.TransactionStatus;
 import com.cdac.acts.transactionservice.enums.TransactionType;
 import com.cdac.acts.transactionservice.exception.TransactionCreationException;
+import com.cdac.acts.transactionservice.repository.TransactionRepository.FrequentContactProjection;
 import com.cdac.acts.transactionservice.repository.TransactionRepository;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -34,6 +40,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final RestTemplate restTemplate;
     private final String WALLET_SERVICE_URL = "http://wallet-service/wallets";
+    private final String USER_SERVICE_URL = "http://user-service/users/";
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -153,6 +160,47 @@ public class TransactionServiceImpl implements TransactionService {
         );
     }
 
+    @Override
+    public List<FrequentContactDto> getFrequentContacts(UUID walletId, int limit) {
+        log.info("Fetching {} frequent contacts for wallet ID: {}", limit, walletId);
+        Pageable pageable = PageRequest.of(0, limit);
+        List<FrequentContactProjection> projections = transactionRepository.findFrequentContactsByWalletId(walletId, pageable);
+
+        List<FrequentContactDto> frequentContacts = new ArrayList<>();
+
+        for (FrequentContactProjection projection : projections) {
+            try {
+                // Step 1: Get Wallet DTO to find the User ID
+                WalletResponse wallet = restTemplate.getForObject(WALLET_SERVICE_URL + "/" + projection.getOtherWalletId(), WalletResponse.class);
+                if (wallet == null || wallet.getUserId() == null) continue;
+
+                // Step 2: Get User DTO to find name and avatar
+                UserResponse user = restTemplate.getForObject(USER_SERVICE_URL + "/" + wallet.getUserId(), UserResponse.class);
+                log.error(user.toString());
+                if (user == null) continue;
+
+                frequentContacts.add(new FrequentContactDto(
+                        user.getId(),
+                        user.getName(),
+                        null,
+                        projection.getTransactionCount()
+                ));
+            } catch (RestClientException e) {
+                log.error("Failed to enrich contact data for wallet ID {}: {}", projection.getOtherWalletId(), e.getMessage());
+                // Continue to the next contact instead of failing the whole request
+            }
+        }
+        return frequentContacts;
+    }
+
+    // The @JsonIgnoreProperties annotation prevents errors if the actual response
+    // has more fields than are defined here.extracting only what is needed
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class UserResponse {
+        private UUID id;
+        private String name;
+    }
     @Data
     @AllArgsConstructor
     private static class WalletUpdateRequest {
