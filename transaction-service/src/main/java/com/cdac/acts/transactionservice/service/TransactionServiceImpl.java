@@ -33,49 +33,58 @@ public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final RestTemplate restTemplate;
-    private final String WALLET_SERVICE_URL = "http://wallet-service/api/wallets";
-    //for local testing use the local url
-    //private final String WALLET_SERVICE_URL = "http://127.0.0.1:8082/wallets";
+    private final String WALLET_SERVICE_URL = "http://wallet-service/wallets";
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     @Transactional
-    public TransactionResponse createTransaction(TransactionRequest request, UUID fromWalletId) {
+    public TransactionResponse createTransaction(TransactionRequest request) {
         Transaction transaction = new Transaction();
-        transaction.setFromWalletId(fromWalletId);
+        transaction.setFromWalletId(request.getFromWalletId());
         transaction.setToWalletId(request.getToWalletId());
         transaction.setAmount(request.getAmount());
         transaction.setDescription(request.getDescription());
         transaction.setCategory(request.getCategory());
-        transaction.setType(TransactionType.TRANSFER);
+        transaction.setType(request.getType());
         transaction.setStatus(TransactionStatus.PENDING);
         Transaction savedTransaction = transactionRepository.save(transaction);
 
         try {
-            log.info("Attempting to debit from wallet: {}", fromWalletId);
-            restTemplate.postForObject(WALLET_SERVICE_URL + "/debit",
-                    new WalletUpdateRequest(fromWalletId, request.getAmount()), Void.class);
+            switch (request.getType()) {
+                case TRANSFER:
+                    log.info("Processing TRANSFER from {} to {}", request.getFromWalletId(), request.getToWalletId());
+                    restTemplate.postForObject(WALLET_SERVICE_URL + "/debit",
+                            new WalletUpdateRequest(request.getFromWalletId(), request.getAmount()), Void.class);
+                    restTemplate.postForObject(WALLET_SERVICE_URL + "/credit",
+                            new WalletUpdateRequest(request.getToWalletId(), request.getAmount()), Void.class);
+                    break;
+                case DEPOSIT:
+                    log.info("Processing DEPOSIT to {}", request.getToWalletId());
+                    restTemplate.postForObject(WALLET_SERVICE_URL + "/credit",
+                            new WalletUpdateRequest(request.getToWalletId(), request.getAmount()), Void.class);
+                    break;
+                case WITHDRAWAL:
+                    log.info("Processing WITHDRAWAL from {}", request.getFromWalletId());
+                    restTemplate.postForObject(WALLET_SERVICE_URL + "/debit",
+                            new WalletUpdateRequest(request.getFromWalletId(), request.getAmount()), Void.class);
+                    break;
+                default:
+                    throw new TransactionCreationException("Unsupported transaction type: " + request.getType());
+            }
 
-            log.info("Debit successful. Attempting to credit wallet: {}", request.getToWalletId());
-            restTemplate.postForObject(WALLET_SERVICE_URL + "/credit",
-                    new WalletUpdateRequest(request.getToWalletId(), request.getAmount()), Void.class);
-
-            log.info("Credit successful.");
+            log.info("Wallet operations successful for transaction type: {}", request.getType());
             savedTransaction.setStatus(TransactionStatus.SUCCESS);
 
         } catch (HttpClientErrorException e) {
             String errorPayload = e.getResponseBodyAsString();
             log.error("HTTP Client Error from wallet service: {}", errorPayload);
             savedTransaction.setStatus(TransactionStatus.FAILED);
-            transactionRepository.save(savedTransaction);
-
             String errorMessage = extractMessageFromJson(errorPayload);
             throw new TransactionCreationException(errorMessage);
 
         } catch (Exception e) {
             log.error("A non-HTTP error occurred during wallet operation: {}", e.getMessage());
             savedTransaction.setStatus(TransactionStatus.FAILED);
-            transactionRepository.save(savedTransaction);
             throw new TransactionCreationException("Could not connect to Wallet Service.");
         }
 
@@ -99,7 +108,6 @@ public class TransactionServiceImpl implements TransactionService {
                 .and(hasStatus(status))
                 .and(isBetweenDates(startDate, endDate));
 
-        // The database query already sorts by most recent first, so no need to reverse in code.
         return transactionRepository.findAll(spec)
                 .stream()
                 .map(this::mapToResponse)
@@ -111,15 +119,13 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository.findById(transactionId).map(this::mapToResponse);
     }
 
+
     @Override
     public List<TransactionResponse> getTransactionsByUserId(UUID userId) {
         WalletResponse wallet = restTemplate.getForObject(WALLET_SERVICE_URL + "/user/" + userId, WalletResponse.class);
 
-        // reversing the order for newest first.
         if (wallet != null && wallet.getId() != null) {
-            List<TransactionResponse> allTransactions =  getTransactions(wallet.getId(), null, null, null, null);
-            Collections.reverse(allTransactions);
-            return allTransactions;
+            return getTransactions(wallet.getId(), null, null, null, null);
         }
         return List.of();
     }
@@ -155,7 +161,6 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Data
-    @AllArgsConstructor
     private static class WalletResponse {
         private UUID id;
         private UUID userId;

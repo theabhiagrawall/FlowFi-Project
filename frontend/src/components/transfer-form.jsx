@@ -41,7 +41,7 @@ export function TransferForm() {
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [selectedUser, setSelectedUser] = React.useState(null);
 
-    // new state to fetch wallet ID early
+    // new state to fetch wallet ID early so that transaction can be quicker
     const [recipientWalletId, setRecipientWalletId] = React.useState(null);
     const [walletFetchState, setWalletFetchState] = React.useState({ status: 'idle', error: null }); // 'idle' | 'loading' | 'success' | 'error'
 
@@ -128,7 +128,7 @@ export function TransferForm() {
 
     async function onSubmit(values) {
         // Guard clause: Ensure we have a valid recipient wallet before proceeding
-        // to safegaurd failing of API call
+        // to safeguard failing of API call
         if (walletFetchState.status !== 'success' || !recipientWalletId) {
             toast({
                 title: 'Invalid Recipient',
@@ -150,6 +150,7 @@ export function TransferForm() {
                 toWalletId: recipientWalletId,
                 amount: values.amount,
                 category: "TRANSFER",
+                type: "TRANSFER",
                 description: values.note || `Transfer to ${selectedUser.name}`,
             };
 
