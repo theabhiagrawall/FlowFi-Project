@@ -16,29 +16,41 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card.jsx";
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowRightLeft } from "lucide-react";
 import { cn } from "@/lib/utils.js";
 import { format } from "date-fns";
 import { TransactionFilters } from '@/components/TransactionFilters.jsx';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert.jsx';
 import { Terminal, Loader2 } from 'lucide-react';
-import { Badge } from "@/components/ui/badge.jsx"; // Import Badge component
+import { Badge } from "@/components/ui/badge.jsx";
 
 
-const TransactionFlowIcon = ({ type, fromWalletId, currentWalletId }) => {
-    // This logic is case-insensitive and safe.
-    const isOutgoing = type === 'WITHDRAWAL' || (type === 'TRANSFER' && fromWalletId?.toLowerCase() === currentWalletId?.toLowerCase());
-    const Icon = isOutgoing ? ArrowUpRight : ArrowDownLeft;
-    const color = isOutgoing ? 'text-red-500 bg-red-500/10' : 'text-green-500 bg-green-500/10';
-
-    return (
-        <span className={cn("p-2 rounded-full", color)}>
-            <Icon className="h-4 w-4" />
-        </span>
-    );
+const TransactionFlowIcon = ({ type }) => {
+    // Use a specific icon and color for each transaction type
+    if (type === 'TRANSFER') {
+        return (
+            <span className="p-2 rounded-full bg-blue-500/10">
+                <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+            </span>
+        );
+    }
+    if (type === 'DEPOSIT') {
+        return (
+            <span className="p-2 rounded-full bg-green-500/10">
+                <ArrowDownLeft className="h-4 w-4 text-green-500" />
+            </span>
+        );
+    }
+    if (type === 'WITHDRAWAL') {
+        return (
+            <span className="p-2 rounded-full bg-red-500/10">
+                <ArrowUpRight className="h-4 w-4 text-red-500" />
+            </span>
+        );
+    }
+    return null; // Fallback for unknown types
 };
 
-// Helper function to determine the color of the status badge
 const getStatusColor = (status) => {
     switch (status) {
         case 'SUCCESS':
@@ -62,6 +74,8 @@ export default function HistoryPage() {
         type: null,
         dateRange: { from: undefined, to: undefined },
     });
+    // --- NEW: State to store names of transaction parties ---
+    const [partyNames, setPartyNames] = React.useState({});
 
     React.useEffect(() => {
         try {
@@ -82,7 +96,7 @@ export default function HistoryPage() {
             return;
         }
 
-        const fetchTransactions = async () => {
+        const fetchAndEnrichTransactions = async () => {
             setLoading(true);
             setError(null);
 
@@ -103,8 +117,43 @@ export default function HistoryPage() {
                 if (!response.ok) {
                     throw new Error('Failed to fetch transactions.');
                 }
-                const data = await response.json();
-                setTransactions(Array.isArray(data) ? data : []);
+                let data = await response.json();
+
+                if (Array.isArray(data)) {
+                    data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    setTransactions(data);
+
+                    // --- NEW: Logic to fetch names for transfer parties ---
+                    const walletIdsToFetch = new Set();
+                    data.forEach(tx => {
+                        if (tx.type === 'TRANSFER') {
+                            const isOutgoing = tx.fromWalletId?.toLowerCase() === currentUser.walletId?.toLowerCase();
+                            const otherWalletId = isOutgoing ? tx.toWalletId : tx.fromWalletId;
+                            if (otherWalletId) {
+                                walletIdsToFetch.add(otherWalletId);
+                            }
+                        }
+                    });
+
+                    const namePromises = Array.from(walletIdsToFetch).map(async (walletId) => {
+                        try {
+                            const walletRes = await fetch(`http://localhost:8080/wallet-service/api/wallets/${walletId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                            if (!walletRes.ok) return [walletId, 'Unknown User'];
+                            const walletData = await walletRes.json();
+
+                            const userRes = await fetch(`http://localhost:8080/user-service/users/${walletData.userId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                            if (!userRes.ok) return [walletId, 'Unknown User'];
+                            const userData = await userRes.json();
+
+                            return [walletId, userData.name];
+                        } catch {
+                            return [walletId, 'Unknown User'];
+                        }
+                    });
+
+                    const names = Object.fromEntries(await Promise.all(namePromises));
+                    setPartyNames(prev => ({ ...prev, ...names }));
+                }
             } catch (err) {
                 setError(err.message);
                 setTransactions([]);
@@ -113,7 +162,7 @@ export default function HistoryPage() {
             }
         };
 
-        fetchTransactions();
+        fetchAndEnrichTransactions();
     }, [currentUser, filters]);
 
     const formatCurrency = (amount) =>
@@ -177,25 +226,23 @@ export default function HistoryPage() {
             const amountColor = isOutgoing ? 'text-red-500' : 'text-green-500';
             const amountPrefix = isOutgoing ? '-' : '+';
 
-            // Logic to determine the other party in the transaction for display
+            // --- UPDATED: Logic to display fetched names ---
             let transactionPartyInfo = '';
             if (tx.type === 'DEPOSIT') {
                 transactionPartyInfo = 'From: System';
             } else if (tx.type === 'WITHDRAWAL') {
                 transactionPartyInfo = 'To: System';
             } else if (tx.type === 'TRANSFER') {
-                if (isOutgoing) {
-                    transactionPartyInfo = `To: ...${tx.toWalletId.slice(-6)}`;
-                } else {
-                    transactionPartyInfo = `From: ...${tx.fromWalletId.slice(-6)}`;
-                }
+                const otherWalletId = isOutgoing ? tx.toWalletId : tx.fromWalletId;
+                const otherPartyName = partyNames[otherWalletId] || `...${otherWalletId.slice(-6)}`;
+                transactionPartyInfo = isOutgoing ? `To: ${otherPartyName}` : `From: ${otherPartyName}`;
             }
 
             return (
                 <TableRow key={tx.id}>
                     <TableCell>
                         <div className="flex items-center gap-3">
-                            <TransactionFlowIcon type={tx.type} fromWalletId={tx.fromWalletId} currentWalletId={currentUser.walletId} />
+                            <TransactionFlowIcon type={tx.type} />
                             <div className="flex-grow">
                                 <p className="font-medium">{tx.description || 'N/A'}</p>
                                 <div className="flex items-center gap-2 flex-wrap mt-1">
@@ -209,7 +256,10 @@ export default function HistoryPage() {
                         </div>
                     </TableCell>
                     <TableCell className="capitalize">{tx.category?.toLowerCase()}</TableCell>
-                    <TableCell>{format(new Date(tx.createdAt), 'MMM d, yyyy')}</TableCell>
+                    <TableCell className="text-sm">
+                        <div>{format(new Date(tx.createdAt), 'MMM d, yyyy')}</div>
+                        <div className="text-xs text-muted-foreground">{format(new Date(tx.createdAt), 'h:mm a')}</div>
+                    </TableCell>
                     <TableCell className={cn("text-right font-semibold", amountColor)}>
                         {amountPrefix}{formatCurrency(tx.amount)}
                     </TableCell>
@@ -235,7 +285,7 @@ export default function HistoryPage() {
                             <TableRow>
                                 <TableHead className="w-[45%]">Transaction Details</TableHead>
                                 <TableHead>Category</TableHead>
-                                <TableHead>Date</TableHead>
+                                <TableHead>Date & Time</TableHead>
                                 <TableHead className="text-right">Amount</TableHead>
                             </TableRow>
                         </TableHeader>
