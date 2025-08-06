@@ -103,5 +103,36 @@ public class AdminServiceImpl implements AdminService {
             kycInfoRepository.save(kycInfo);
         }
     }
+
+    @Override
+    public void approveKyc(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        Optional<KycInfo> optionalKyc = kycInfoRepository.findByUserId(userId);
+        if (optionalKyc.isEmpty()) {
+            throw new RuntimeException("KYC info not found for user");
+        }
+
+        KycInfo kycInfo = optionalKyc.get();
+        kycInfo.setVerified(true);
+        kycInfoRepository.save(kycInfo);
+
+        user.setKycVerified(true);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void rejectKyc(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        Optional<KycInfo> optionalKyc = kycInfoRepository.findByUserId(userId);
+        optionalKyc.ifPresent(kycInfoRepository::delete);  // delete if exists
+
+        user.setKycVerified(false);
+        userRepository.save(user);
+    }
+
 }
 

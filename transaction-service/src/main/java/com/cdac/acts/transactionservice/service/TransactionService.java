@@ -14,12 +14,11 @@ import java.util.UUID;
 @Service
 public interface TransactionService {
 
-    TransactionResponse createTransaction(TransactionRequest transactionRequest, UUID fromWalletId);
-
+    public TransactionResponse createTransaction(TransactionRequest request);
     //  flexible filtering
     List<TransactionResponse> getTransactions(UUID walletId, TransactionType type, TransactionStatus status, LocalDate startDate, LocalDate endDate);
 
-    // New method to get a single transaction by its ID
+    //  get a single transaction by its ID
     Optional<TransactionResponse> getTransactionById(UUID transactionId);
 
     //  getting transactions by userId (calls wallet-service)

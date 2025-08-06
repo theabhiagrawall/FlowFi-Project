@@ -1,156 +1,154 @@
 'use client';
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card.jsx';
-import { getAuthenticatedUser } from '@/lib/data.js';
 import { DepositDialog } from './deposit-dialog.jsx';
 import { WithdrawDialog } from './withdraw-dialog.jsx';
-import React, {useEffect, useState} from "react";
-import {useToast} from "@/hooks/use-toast";
+import React, { useCallback, useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
-export function BalanceCard(props) {
-    const [balance, setBalance] =useState(0);
+const WALLET_SERVICE_URL = "http://localhost:8080/wallet-service/wallets";
+const TRANSACTION_SERVICE_URL = "http://localhost:8080/transaction-service/api/transactions";
+
+// should be handled by backend this is for testing only
+const SYSTEM_WALLET_ID = "00000000-0000-0000-0000-000000000001";
+
+
+export function BalanceCard() {
+    const [balance, setBalance] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
-    const [amount, setAmount] = React.useState('');
+    const [amount, setAmount] = useState('');
 
-
-    // userID for testing only fetch user id from user Object
-    const user = JSON.parse(localStorage.getItem('userData'));
-    const userID = user.id;
+    const user = React.useMemo(() => JSON.parse(localStorage.getItem('userData')), []);
     const token = localStorage.getItem('authToken');
-    const walletId = user.walletId;
 
-    const fetchBalances = async () => {
-        const balances = await fetch(`http://127.0.0.1:8080/wallet-service/wallets/balance/${userID}`,{
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
-        });
-        const data  = await balances.json();
-        setBalance(data);
-    }
+    const fetchBalance = useCallback(async () => {
+        if (!user?.id || !token) return;
 
+        try {
+            const response = await fetch(`${WALLET_SERVICE_URL}/balance/${user.id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+            });
+            if (!response.ok) {
+                throw new Error("Failed to fetch balance.");
+            }
+            const data = await response.json();
+            setBalance(data);
+        } catch (error) {
+            console.error("Balance fetch error:", error);
+            toast({
+                title: 'Error',
+                description: 'Could not retrieve your current balance.',
+                variant: 'destructive',
+            });
+        }
+    }, [user, token, toast]);
 
-    const handleDeposit = async () => {
+    useEffect(() => {
+        fetchBalance();
+    }, [fetchBalance]);
+
+    const handleTransaction = async (type) => {
         if (!amount || isNaN(amount) || amount <= 0) {
             toast({
                 title: 'Invalid Amount',
-                description: 'Please enter a valid amount to deposit.',
+                description: 'Please enter a valid positive amount.',
+                variant: 'destructive',
+            });
+            return;
+        }
+        if (!user?.walletId) {
+            toast({
+                title: 'Error',
+                description: 'User wallet information is missing.',
                 variant: 'destructive',
             });
             return;
         }
 
+        setIsSubmitting(true);
+
+        const transactionPayload = {
+            type: type,
+            amount: parseFloat(amount),
+            toWalletId: type === 'DEPOSIT' ? user.walletId : SYSTEM_WALLET_ID,
+            fromWalletId: type === 'WITHDRAWAL' ? user.walletId : SYSTEM_WALLET_ID,
+            category: type,
+            description: `Funds ${type.toLowerCase()}ed via web application`,
+        };
+
         try {
-            const response = await fetch('http://127.0.0.1:8080/wallet-service/wallets/credit', {
+            const response = await fetch(TRANSACTION_SERVICE_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    walletId,
-                    amount: parseFloat(amount),
-                }),
+                body: JSON.stringify(transactionPayload),
             });
 
             const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.message || 'Deposit failed');
+                throw new Error(data.message || `${type} failed. Please try again.`);
             }
 
             toast({
-                title: 'Deposit Successful',
-                description: 'Your funds have been added to your account.',
+                title: `${type.charAt(0) + type.slice(1).toLowerCase()} Successful`,
+                description: `Your transaction of ${formattedAmount(amount)} has been processed.`,
             });
 
-            // Optionally reset amount field
             setAmount('');
-            setBalance(data.balance);
+            await fetchBalance();
+
         } catch (error) {
             toast({
-                title: 'Deposit Failed',
-                description: error.message || 'An error occurred while depositing.',
+                title: `${type.charAt(0) + type.slice(1).toLowerCase()} Failed`,
+                description: error.message,
                 variant: 'destructive',
             });
-        }
-    };
-    const handleWithdraw = async () => {
-        toast({
-            title: "Withdrawal Successful",
-            description: "Funds have been withdrawn from your account.",
-            variant: 'default',
-        });
-
-        try {
-            const response = await fetch('http://127.0.0.1:8080/wallet-service/wallets/debit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    walletId,
-                    amount: parseFloat(amount),
-                }),
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.message || 'withdraw failed');
-            }
-
-            toast({
-                title: 'withdraw Successful',
-                description: 'Your funds have been moved back to your account.',
-            });
-
-            // Optionally reset amount field
-            setAmount('');
-            setBalance(data.balance);
-        } catch (error) {
-            toast({
-                title: 'Deposit Failed',
-                description: error.message || 'An error occurred while depositing.',
-                variant: 'destructive',
-            });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
+    const formattedAmount = (num) => new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+    }).format(num);
 
-
-    useEffect( ()=>{
-         fetchBalances();
-    },[])
-  const formattedBalance = new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-  }).format(balance);
-
-  return (
-    <Card className="lg:col-span-2">
-      <CardHeader>
-        <CardDescription>Available Balance</CardDescription>
-        <CardTitle className="text-4xl font-headline">{formattedBalance}</CardTitle>
-      </CardHeader>
-      <CardContent>
-      {/*  mini charts */}
-      </CardContent>
-      <CardFooter className="gap-2">
-        <DepositDialog amount={amount} handleDeposit={handleDeposit}  setAmount={setAmount} />
-          <WithdrawDialog
-              amount={amount}
-              setAmount={setAmount}
-              handleWithdraw={handleWithdraw}
-          />
-      </CardFooter>
-    </Card>
-  );
+    return (
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardDescription>Available Balance</CardDescription>
+                <CardTitle className="text-4xl font-headline">{formattedAmount(balance)}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {/* mini charts could go here */}
+            </CardContent>
+            <CardFooter className="gap-2">
+                <DepositDialog
+                    amount={amount}
+                    setAmount={setAmount}
+                    handleDeposit={() => handleTransaction('DEPOSIT')}
+                    isSubmitting={isSubmitting}
+                />
+                <WithdrawDialog
+                    amount={amount}
+                    setAmount={setAmount}
+                    handleWithdraw={() => handleTransaction('WITHDRAWAL')}
+                    isSubmitting={isSubmitting}
+                />
+            </CardFooter>
+        </Card>
+    );
 }

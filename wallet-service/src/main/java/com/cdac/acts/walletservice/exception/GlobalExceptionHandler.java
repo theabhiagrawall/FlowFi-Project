@@ -1,6 +1,8 @@
 package com.cdac.acts.walletservice.exception;
 
 import com.cdac.acts.walletservice.dto.ErrorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -9,6 +11,8 @@ import org.springframework.web.context.request.WebRequest;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(WalletNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleWalletNotFoundException(WalletNotFoundException ex, WebRequest request) {
@@ -54,6 +58,24 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
+
+    @ExceptionHandler(TransactionServiceException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionServiceException(TransactionServiceException ex, WebRequest request) {
+        // Log the error for monitoring server-to-server communication issues.
+        logger.error("Transaction Service communication failure: {}", ex.getMessage(), ex);
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_GATEWAY.value(), // 502 Status Code
+                HttpStatus.BAD_GATEWAY.getReasonPhrase(), // "Bad Gateway"
+                "The transaction could not be recorded due to an internal service error. Please try again later.", // A user-friendly message
+                request.getDescription(false)
+        );
+        // Return a 502 status, which is appropriate for upstream service failures.
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_GATEWAY);
+    }
+
+
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
@@ -67,12 +89,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
-        // Log the full stack trace for debugging purposes
-        ex.printStackTrace();
+        logger.error("An unexpected internal server error occurred: {}", ex.getMessage(), ex);
+
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "An unexpected error occurred: " + ex.getMessage(), // General message for client
+                "An unexpected error occurred. Our team has been notified.", // General message for client
                 request.getDescription(false)
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);

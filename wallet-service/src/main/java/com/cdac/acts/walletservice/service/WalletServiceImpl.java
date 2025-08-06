@@ -3,34 +3,29 @@ package com.cdac.acts.walletservice.service;
 import com.cdac.acts.walletservice.dto.WalletDto;
 import com.cdac.acts.walletservice.entity.Wallet;
 import com.cdac.acts.walletservice.repository.WalletRepository;
-import com.cdac.acts.walletservice.exception.*; // Import all custom exceptions
+import com.cdac.acts.walletservice.exception.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
-
-// future addition
-//Add transaction history retrieval.
-//Add a method to “freeze” or “lock” wallets.
-//Add pagination for wallet listing (for admin dashboard).
 
 @Service
 public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
+    private static final Logger logger = LoggerFactory.getLogger(WalletServiceImpl.class);
 
-    // Constructor Injection
+
     public WalletServiceImpl(WalletRepository walletRepository) {
         this.walletRepository = walletRepository;
     }
 
-    // Helper to convert the Entity to DTO
     private WalletDto toWalletDto(Wallet wallet) {
         if (wallet == null) {
-            return null; // Or throw an exception if a null Wallet entity is unexpected here
+            return null;
         }
         return new WalletDto(wallet.getId(), wallet.getUserId(), wallet.getBalance(), wallet.getUpdatedAt());
     }
@@ -38,25 +33,20 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public WalletDto createWallet(UUID userId) {
-        // Check if a wallet already exists
-        Optional<Wallet> existingWallet = walletRepository.findByUserId(userId);
-        if (existingWallet.isPresent()) {
-            // custom exception: WalletCreationException
+        if (walletRepository.findByUserId(userId).isPresent()) {
             throw new WalletCreationException("Wallet already exists for user ID: " + userId);
         }
-
         Wallet wallet = new Wallet();
         wallet.setUserId(userId);
-        wallet.setBalance(BigDecimal.ZERO); // New wallets start with zero balance Using as to avoid hardcoding and inconsistency
-        wallet.setUpdatedAt(LocalDateTime.now()); // Set initial update timestamp which will be created at
-
+        wallet.setBalance(BigDecimal.ZERO);
+        wallet.setUpdatedAt(LocalDateTime.now());
         Wallet savedWallet = walletRepository.save(wallet);
+        logger.info("Created new wallet for user ID: {}", userId);
         return toWalletDto(savedWallet);
     }
 
     @Override
     public WalletDto getWalletById(UUID walletId) {
-        // Use orElseThrow with custom exception
         return walletRepository.findById(walletId)
                 .map(this::toWalletDto)
                 .orElseThrow(() -> new WalletNotFoundException("Wallet with ID " + walletId + " not found."));
@@ -72,6 +62,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public WalletDto creditWallet(UUID walletId, BigDecimal amount) {
+        logger.info("Crediting wallet {} with amount {}", walletId, amount);
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidAmountException("Credit amount must be positive.");
         }
@@ -80,16 +71,18 @@ public class WalletServiceImpl implements WalletService {
                 .orElseThrow(() -> new WalletNotFoundException("Wallet not found for ID: " + walletId));
 
         wallet.setBalance(wallet.getBalance().add(amount));
-        wallet.setUpdatedAt(LocalDateTime.now()); // Update timestamp
+        wallet.setUpdatedAt(LocalDateTime.now());
 
         Wallet updatedWallet = walletRepository.save(wallet);
+
+
         return toWalletDto(updatedWallet);
     }
 
     @Override
     @Transactional
     public WalletDto debitWallet(UUID walletId, BigDecimal amount) {
-        // Validate amount using custom exception
+        logger.info("Debiting wallet {} with amount {}", walletId, amount);
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidAmountException("Debit amount must be positive.");
         }
@@ -97,15 +90,15 @@ public class WalletServiceImpl implements WalletService {
         Wallet wallet = walletRepository.findById(walletId)
                 .orElseThrow(() -> new WalletNotFoundException("Wallet not found for ID: " + walletId));
 
-        // Check for insufficient balance using custom exception
         if (wallet.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientFundsException("Insufficient funds in wallet ID: " + walletId + ". Available: " + wallet.getBalance() + ", Requested: " + amount);
+            throw new InsufficientFundsException("Insufficient funds in wallet ID: " + walletId);
         }
 
         wallet.setBalance(wallet.getBalance().subtract(amount));
-        wallet.setUpdatedAt(LocalDateTime.now()); // Update timestamp
+        wallet.setUpdatedAt(LocalDateTime.now());
 
         Wallet updatedWallet = walletRepository.save(wallet);
+
         return toWalletDto(updatedWallet);
     }
 
@@ -113,9 +106,10 @@ public class WalletServiceImpl implements WalletService {
     @Transactional
     public void deleteWallet(UUID walletId) {
         if (!walletRepository.existsById(walletId)) {
-            throw new WalletNotFoundException("Wallet with ID " + walletId + " not found for deletion.");
+            throw new WalletNotFoundException("Cannot delete. Wallet with ID " + walletId + " not found.");
         }
         walletRepository.deleteById(walletId);
+        logger.info("Deleted wallet with ID: {}", walletId);
     }
 
     @Override

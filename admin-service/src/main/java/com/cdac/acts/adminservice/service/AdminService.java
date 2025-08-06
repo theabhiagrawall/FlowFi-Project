@@ -16,4 +16,6 @@ public interface AdminService {
 
     String addOrUpdateKycInfo(UUID userId, KycInfoRequest dto);
     void updateUserByAdmin(UUID userId, UpdateUserRequest request);
+    void approveKyc(UUID userId);
+    void rejectKyc(UUID userId);
 }

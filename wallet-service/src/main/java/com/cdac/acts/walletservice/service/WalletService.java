@@ -27,4 +27,6 @@ public interface WalletService {
 
     // Check balance
     BigDecimal getBalance(UUID userId);
+
+
 }
