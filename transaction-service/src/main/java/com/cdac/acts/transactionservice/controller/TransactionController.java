@@ -5,6 +5,7 @@ import com.cdac.acts.transactionservice.dto.TransactionResponse;
 import com.cdac.acts.transactionservice.enums.TransactionStatus;
 import com.cdac.acts.transactionservice.enums.TransactionType;
 import com.cdac.acts.transactionservice.service.TransactionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -28,14 +29,8 @@ public class TransactionController {
      */
     @PostMapping
     public ResponseEntity<TransactionResponse> createTransaction(
-            @RequestBody TransactionRequest transactionRequest) {
-
-        // SECURITY WARNING: This is insecure. The sender's ID should come
-        // from a security token, not the request body.
-        // AS for now we will be using the request body for simplicity
-        TransactionResponse response = transactionService.createTransaction(
-                transactionRequest,
-                transactionRequest.getFromWalletId());
+            @Valid @RequestBody TransactionRequest transactionRequest) {
+        TransactionResponse response = transactionService.createTransaction(transactionRequest);
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
