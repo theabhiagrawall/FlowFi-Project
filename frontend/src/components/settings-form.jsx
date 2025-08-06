@@ -81,72 +81,69 @@ export function SettingsForm() {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <FormField
-                    control={form.control}
-                    name="profilePicture"
-                    render={({ field }) => (
-                        <FormItem className="flex items-center gap-4">
-                            <Avatar className="h-20 w-20">
-                                <AvatarImage src={user.avatar} data-ai-hint="woman portrait" />
-                                <AvatarFallback>{user.name?.[0] || 'A'}</AvatarFallback>
-                            </Avatar>
-                            <div className="grid gap-1.5">
-                                <FormLabel>Profile Picture</FormLabel>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                {/* Left Column: Avatar + Phone */}
+                <div className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="profilePicture"
+                        render={() => (
+                            <FormItem className="flex flex-col items-center gap-4">
+                                <Avatar className="h-28 w-28">
+                                    <AvatarImage src={user.avatar} data-ai-hint="woman portrait" />
+                                    <AvatarFallback>{user.name?.[0] || 'A'}</AvatarFallback>
+                                </Avatar>
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Phone Number (Read-only) */}
+                    <FormItem className="w-full">
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                            <Input
+                                type="text"
+                                value={user.phoneNumber || ''}
+                                disabled
+                                className="bg-muted cursor-not-allowed"
+                            />
+                        </FormControl>
+                    </FormItem>
+                </div>
+
+                {/* Right Column: Editable Fields */}
+                <div className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Full Name</FormLabel>
                                 <FormControl>
-                                    <Input
-                                        type="file"
-                                        className="w-full"
-                                        onChange={(e) => field.onChange(e.target.files)}
-                                    />
+                                    <Input placeholder="Your name" {...field} />
                                 </FormControl>
-                            </div>
-                        </FormItem>
-                    )}
-                />
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Your name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email Address</FormLabel>
+                                <FormControl>
+                                    <Input type="email" placeholder="Your email" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Email Address</FormLabel>
-                            <FormControl>
-                                <Input type="email" placeholder="Your email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                {/* 📱 Phone Number Display (read-only) */}
-                <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                        <Input
-                            type="text"
-                            value={user.phoneNumber || ''}
-                            disabled
-                            className="bg-muted cursor-not-allowed"
-                        />
-                    </FormControl>
-                </FormItem>
-
-                <Button type="submit">Save Changes</Button>
+                    <Button type="submit" className="mt-4">Save Changes</Button>
+                </div>
             </form>
         </Form>
     );
