@@ -53,6 +53,7 @@ export function SettingsForm() {
         toast({
             title: 'Profile Updated',
             description: 'Your settings have been saved successfully.',
+            variant: 'success',
         });
     }
 

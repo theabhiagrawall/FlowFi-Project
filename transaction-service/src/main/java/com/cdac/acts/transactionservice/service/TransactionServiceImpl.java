@@ -1,5 +1,6 @@
 package com.cdac.acts.transactionservice.service;
 
+import com.cdac.acts.transactionservice.dto.AnalyticsResponseDto;
 import com.cdac.acts.transactionservice.dto.FrequentContactDto;
 import com.cdac.acts.transactionservice.dto.TransactionRequest;
 import com.cdac.acts.transactionservice.dto.TransactionResponse;
@@ -26,6 +27,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -191,6 +193,60 @@ public class TransactionServiceImpl implements TransactionService {
             }
         }
         return frequentContacts;
+    }
+
+    @Override
+    public AnalyticsResponseDto getAnalyticsData(UUID walletId) {
+        log.info("Generating analytics data for wallet ID: {}", walletId);
+
+        Map<String, BigDecimal> currentMonthMap = transactionRepository.findCurrentMonthTotals(walletId);
+        Map<String, BigDecimal> prevMonthMap = transactionRepository.findPreviousMonthTotals(walletId);
+
+        AnalyticsResponseDto.MonthlyTotals currentMonth = new AnalyticsResponseDto.MonthlyTotals(
+                currentMonthMap.getOrDefault("incoming", BigDecimal.ZERO),
+                currentMonthMap.getOrDefault("outgoing", BigDecimal.ZERO)
+        );
+        AnalyticsResponseDto.MonthlyTotals prevMonth = new AnalyticsResponseDto.MonthlyTotals(
+                prevMonthMap.getOrDefault("incoming", BigDecimal.ZERO),
+                prevMonthMap.getOrDefault("outgoing", BigDecimal.ZERO)
+        );
+
+        double incomingChange = calculatePercentageChange(prevMonth.getIncoming(), currentMonth.getIncoming());
+        double outgoingChange = calculatePercentageChange(prevMonth.getOutgoing(), currentMonth.getOutgoing());
+
+        AnalyticsResponseDto.SummaryDto summary = new AnalyticsResponseDto.SummaryDto(currentMonth, new AnalyticsResponseDto.PercentageChange(incomingChange, outgoingChange));
+
+        List<AnalyticsResponseDto.MonthlyOverviewDto> monthlyOverview = transactionRepository.findMonthlyOverview(walletId)
+                .stream()
+                .map(row -> new AnalyticsResponseDto.MonthlyOverviewDto(
+                        (String) row.get("month"),
+                        (BigDecimal) row.get("sent"),
+                        (BigDecimal) row.get("received")
+                ))
+                .collect(Collectors.toList());
+
+        List<AnalyticsResponseDto.CategorySpendingDto> spendingByCategory = transactionRepository.findSpendingByCategory(walletId)
+                .stream()
+                .map(row -> new AnalyticsResponseDto.CategorySpendingDto(
+                        (String) row.get("category"),
+                        (BigDecimal) row.get("amount")
+                ))
+                .collect(Collectors.toList());
+
+        return new AnalyticsResponseDto(summary, monthlyOverview, spendingByCategory);
+    }
+
+    private double calculatePercentageChange(BigDecimal previous, BigDecimal current) {
+        if (previous == null || previous.compareTo(BigDecimal.ZERO) == 0) {
+            return current != null && current.compareTo(BigDecimal.ZERO) > 0 ? 100.0 : 0.0;
+        }
+        if (current == null) {
+            return -100.0;
+        }
+        return current.subtract(previous)
+                .divide(previous, 4, RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100"))
+                .doubleValue();
     }
 
     // The @JsonIgnoreProperties annotation prevents errors if the actual response

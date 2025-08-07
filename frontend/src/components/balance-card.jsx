@@ -105,6 +105,7 @@ export function BalanceCard() {
             toast({
                 title: `${type.charAt(0) + type.slice(1).toLowerCase()} Successful`,
                 description: `Your transaction of ${formattedAmount(amount)} has been processed.`,
+                variant: 'success',
             });
 
             setAmount('');

@@ -73,6 +73,7 @@ export function LoginForm() {
           toast({
               title: 'login Successful',
               description: 'Welcome to flow fi!',
+              variant: 'success',
           });
           if(user.role === "admin"){
               router.push('/admin');
