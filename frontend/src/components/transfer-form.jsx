@@ -14,9 +14,12 @@ import {
 } from '@/components/ui/form.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { useToast } from '@/hooks/use-toast.js';
-import { ArrowRight, Loader2, X } from 'lucide-react';
+import { ArrowRight, Loader2, X, Check, ChevronsUpDown } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.jsx';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.jsx";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command.jsx";
+import { cn } from "@/lib/utils.js";
 
 const formSchema = z.object({
     recipientId: z.string().min(1, { message: 'Please select a recipient.' }),
@@ -24,6 +27,7 @@ const formSchema = z.object({
         message: 'Amount must be positive.',
     }),
     note: z.string().optional(),
+    category: z.string().min(1, { message: 'Please select or add a category.' }),
 });
 
 const getAuthHeaders = () => {
@@ -33,6 +37,9 @@ const getAuthHeaders = () => {
     return headers;
 };
 
+const USER_CATEGORIES_KEY = 'user_transfer_categories';
+const DEFAULT_CATEGORIES = ['Food', 'Travel', 'Bills', 'Shopping', 'Entertainment', 'Other'];
+
 export function TransferForm() {
     const { toast } = useToast();
     const [search, setSearch] = React.useState('');
@@ -40,19 +47,35 @@ export function TransferForm() {
     const [loadingSearch, setLoadingSearch] = React.useState(false);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [selectedUser, setSelectedUser] = React.useState(null);
-
-    // new state to fetch wallet ID early so that transaction can be quicker
     const [recipientWalletId, setRecipientWalletId] = React.useState(null);
-    const [walletFetchState, setWalletFetchState] = React.useState({ status: 'idle', error: null }); // 'idle' | 'loading' | 'success' | 'error'
+    const [walletFetchState, setWalletFetchState] = React.useState({ status: 'idle', error: null });
+
+    const [categories, setCategories] = React.useState(DEFAULT_CATEGORIES);
+    const [categoryPopoverOpen, setCategoryPopoverOpen] = React.useState(false);
+    const [categorySearch, setCategorySearch] = React.useState('');
 
     const searchRef = React.useRef(null);
     const form = useForm({
         resolver: zodResolver(formSchema),
-        defaultValues: { recipientId: '', amount: '', note: '' },
+        defaultValues: { recipientId: '', amount: '', note: '', category: '' },
     });
-    const { setValue, handleSubmit, reset, watch, control } = form;
+    const { setValue, handleSubmit, reset, watch, control, getValues } = form;
     const currentAmount = watch('amount');
     const currentNote = watch('note');
+
+    React.useEffect(() => {
+        try {
+            const storedCategories = localStorage.getItem(USER_CATEGORIES_KEY);
+            if (storedCategories) {
+                setCategories(JSON.parse(storedCategories));
+            } else {
+                localStorage.setItem(USER_CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES));
+            }
+        } catch (error) {
+            console.error("Failed to load categories from localStorage", error);
+            setCategories(DEFAULT_CATEGORIES);
+        }
+    }, []);
 
     React.useEffect(() => {
         const fetchUsers = () => {
@@ -72,13 +95,11 @@ export function TransferForm() {
     }, [search, selectedUser]);
 
     React.useEffect(() => {
-        // If no user is selected, reset everything
         if (!selectedUser) {
             setRecipientWalletId(null);
             setWalletFetchState({ status: 'idle', error: null });
             return;
         }
-
         const fetchRecipientWallet = async () => {
             setWalletFetchState({ status: 'loading', error: null });
             try {
@@ -86,22 +107,15 @@ export function TransferForm() {
                     method: 'GET',
                     headers: getAuthHeaders(),
                 });
-
-                if (!res.ok) {
-                    throw new Error(`This user doesn't have a wallet or can't be found.`);
-                }
-
+                if (!res.ok) throw new Error(`This user doesn't have a wallet.`);
                 const walletData = await res.json();
-                console.log("to wallet "+ walletData);
                 setRecipientWalletId(walletData.id);
                 setWalletFetchState({ status: 'success', error: null });
             } catch (error) {
-                console.error("Recipient wallet fetch error:", error);
                 setRecipientWalletId(null);
                 setWalletFetchState({ status: 'error', error: error.message });
             }
         };
-
         fetchRecipientWallet();
     }, [selectedUser]);
 
@@ -123,33 +137,29 @@ export function TransferForm() {
         setSelectedUser(null);
         setValue('recipientId', '');
         setSearch('');
-        reset({ recipientId: '', amount: currentAmount || '', note: currentNote || '' });
+        reset({
+            recipientId: '',
+            amount: currentAmount || '',
+            note: currentNote || '',
+            category: getValues('category') || '',
+        });
     };
 
     async function onSubmit(values) {
-        // Guard clause: Ensure we have a valid recipient wallet before proceeding
-        // to safeguard failing of API call
         if (walletFetchState.status !== 'success' || !recipientWalletId) {
-            toast({
-                title: 'Invalid Recipient',
-                description: 'Please select a valid recipient with a wallet.',
-                variant: 'destructive',
-            });
+            toast({ title: 'Invalid Recipient', description: 'Please select a valid recipient with a wallet.', variant: 'destructive' });
             return;
         }
-
         setIsSubmitting(true);
         try {
-            const userDataString = localStorage.getItem('userData');
-            if (!userDataString) throw new Error("Could not find current user data. Please log in again.");
-            const userData = JSON.parse(userDataString);
+            const userData = JSON.parse(localStorage.getItem('userData'));
             const fromWalletId = userData.walletId;
 
             const transactionPayload = {
                 fromWalletId,
                 toWalletId: recipientWalletId,
                 amount: values.amount,
-                category: "TRANSFER",
+                category: values.category,
                 type: "TRANSFER",
                 description: values.note || `Transfer to ${selectedUser.name}`,
             };
@@ -162,29 +172,32 @@ export function TransferForm() {
 
             if (!transactionRes.ok) {
                 const errorData = await transactionRes.json();
-                throw new Error(errorData.message || 'Transaction failed. Please try again.');
+                throw new Error(errorData.message || 'Transaction failed.');
             }
 
             toast({
                 title: 'Transfer Successful',
-                description: `You have sent $${values.amount.toFixed(2)} to ${selectedUser.name}.`,
+                description: `You have sent ${values.amount.toFixed(2)} to ${selectedUser.name}.`,
             });
+
+            const newCategory = values.category;
+            const lowerCaseCategories = categories.map(c => c.toLowerCase());
+            if (!lowerCaseCategories.includes(newCategory.toLowerCase())) {
+                const updatedCategories = [...categories, newCategory];
+                setCategories(updatedCategories);
+                localStorage.setItem(USER_CATEGORIES_KEY, JSON.stringify(updatedCategories));
+            }
 
             setSelectedUser(null);
             setSearch('');
-            reset({ recipientId: '', amount: '', note: '' });
+            reset({ recipientId: '', amount: '', note: '', category: '' });
 
         } catch (error) {
-            toast({
-                title: 'Transfer Failed',
-                description: error.message,
-                variant: 'destructive',
-            });
+            toast({ title: 'Transfer Failed', description: error.message, variant: 'destructive' });
         } finally {
             setIsSubmitting(false);
         }
     }
-
 
     React.useEffect(() => {
         const handleClickOutside = (event) => {
@@ -196,8 +209,10 @@ export function TransferForm() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Determine if form fields should be enabled
     const isRecipientValid = walletFetchState.status === 'success';
+
+    // --- NEW: Check if the typed category is new ---
+    const isNewCategory = categorySearch.length > 0 && !categories.some(cat => cat.toLowerCase() === categorySearch.toLowerCase());
 
     return (
         <Form {...form}>
@@ -228,22 +243,12 @@ export function TransferForm() {
                             ) : (
                                 <div className="rounded-md border p-2 space-y-2">
                                     <div className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarImage src={selectedUser.avatar} />
-                                            <AvatarFallback>{getInitials(selectedUser.name)}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-grow">
-                                            <p className="font-medium">{selectedUser.name}</p>
-                                            <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
-                                        </div>
-                                        {walletFetchState.status === 'loading' && (
-                                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                                        )}
+                                        <Avatar className="h-8 w-8"><AvatarImage src={selectedUser.avatar} /><AvatarFallback>{getInitials(selectedUser.name)}</AvatarFallback></Avatar>
+                                        <div className="flex-grow"><p className="font-medium">{selectedUser.name}</p><p className="text-sm text-muted-foreground">{selectedUser.email}</p></div>
+                                        {walletFetchState.status === 'loading' && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
                                         <Button variant="ghost" size="icon" className="shrink-0" onClick={clearRecipient}><X className="h-4 w-4" /></Button>
                                     </div>
-                                    {walletFetchState.status === 'error' && (
-                                        <p className="text-sm text-destructive px-1">{walletFetchState.error}</p>
-                                    )}
+                                    {walletFetchState.status === 'error' && <p className="text-sm text-destructive px-1">{walletFetchState.error}</p>}
                                 </div>
                             )}
                             <FormMessage />
@@ -252,8 +257,77 @@ export function TransferForm() {
                 </div>
 
                 <fieldset disabled={!isRecipientValid || isSubmitting} className="space-y-6">
-                    <FormField control={control} name="amount" render={({ field }) => ( <FormItem><FormLabel>Amount (USD)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} step="0.01" /></FormControl><FormMessage /></FormItem> )}/>
-                    <FormField control={control} name="note" render={({ field }) => ( <FormItem><FormLabel>Note (Optional)</FormLabel><FormControl><Input placeholder="For lunch at Cafe Goodluck, August 6th" {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                    <FormField control={control} name="amount" render={({ field }) => ( <FormItem><FormLabel>Amount (INR)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} step="0.01" /></FormControl><FormMessage /></FormItem> )}/>
+
+                    <FormField
+                        control={control}
+                        name="category"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Category</FormLabel>
+                                <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                            >
+                                                {field.value
+                                                    ? categories.find(cat => cat.toLowerCase() === field.value.toLowerCase()) || field.value
+                                                    : "Select or create a category"}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            {/* --- FIX: Track input value correctly --- */}
+                                            <CommandInput
+                                                placeholder="Search or create category..."
+                                                value={categorySearch}
+                                                onValueChange={setCategorySearch}
+                                            />
+                                            <CommandList>
+                                                <CommandEmpty>No results found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {/* --- FIX: Conditionally show "Create" option --- */}
+                                                    {isNewCategory && (
+                                                        <CommandItem
+                                                            value={categorySearch}
+                                                            onSelect={() => {
+                                                                setValue("category", categorySearch, { shouldValidate: true });
+                                                                setCategoryPopoverOpen(false);
+                                                            }}
+                                                        >
+                                                            <span className="mr-2 h-4 w-4" /> {/* Spacer for alignment */}
+                                                            Create "{categorySearch}"
+                                                        </CommandItem>
+                                                    )}
+                                                    {categories.map((category) => (
+                                                        <CommandItem
+                                                            value={category}
+                                                            key={category}
+                                                            onSelect={() => {
+                                                                setValue("category", category, { shouldValidate: true });
+                                                                setCategoryPopoverOpen(false);
+                                                            }}
+                                                        >
+                                                            <Check className={cn("mr-2 h-4 w-4", category.toLowerCase() === field.value?.toLowerCase() ? "opacity-100" : "opacity-0")} />
+                                                            {category}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField control={control} name="note" render={({ field }) => ( <FormItem><FormLabel>Note (Optional)</FormLabel><FormControl><Input placeholder="e.g., For lunch at Cafe Goodluck" {...field} /></FormControl><FormMessage /></FormItem> )}/>
                 </fieldset>
 
                 <Button type="submit" className="w-full" disabled={!isRecipientValid || !currentAmount || currentAmount <= 0 || isSubmitting}>
