@@ -9,6 +9,7 @@ import com.cdac.acts.adminservice.exception.UserNotFoundException;
 import com.cdac.acts.adminservice.repository.KycInfoRepository;
 import com.cdac.acts.adminservice.repository.UserRepository;
 import com.cdac.acts.adminservice.repository.WalletRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -41,11 +42,9 @@ public class AdminServiceImpl implements AdminService {
         List<User> users = userRepository.findAll();
         List<AdminUserViewDTO> userDTOs = new ArrayList<>();
 
-        // ✅ Define the ID to be excluded
         final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
         for (User user : users) {
-            // ✅ Check if the user ID matches the system ID, and skip if it does
             if (user.getId().equals(SYSTEM_USER_ID)) {
                 continue;
             }
@@ -62,11 +61,15 @@ public class AdminServiceImpl implements AdminService {
             Optional<KycInfo> kycInfoOpt = kycInfoRepository.findByUserId(user.getId());
             if (user.isKycVerified()) {
                 dto.setKycStatus("Verified");
-            } else if (kycInfoOpt.isPresent()) {
-                dto.setKycStatus("Pending");
-            } else {
+            }
+            else {
                 dto.setKycStatus("Unverified");
             }
+
+            // ✅ Set the document URL if KYC info exists
+            kycInfoOpt.ifPresent(kycInfo -> {
+                dto.setKycDocumentUrl(kycInfo.getDocumentPath());
+            });
 
             dto.setCreatedAt(user.getCreatedAt().toLocalDateTime());
 
@@ -108,7 +111,6 @@ public class AdminServiceImpl implements AdminService {
 
         return dto;
     }
-
 
     @Override
     @Transactional
@@ -199,9 +201,10 @@ public class AdminServiceImpl implements AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        Optional<KycInfo> optionalKyc = kycInfoRepository.findByUserId(userId);
-        optionalKyc.ifPresent(kycInfoRepository::delete);  // delete if exists
+        // ✅ Use the new, more reliable delete method
+        kycInfoRepository.deleteByUserId(userId);
 
+        // Now, update the user entity's status and save it.
         user.setKycVerified(false);
         userRepository.save(user);
     }
