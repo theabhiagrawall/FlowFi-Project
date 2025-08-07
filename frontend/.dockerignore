@@ -1,7 +1,20 @@
-node_modules
-.next
-*.log
+# Git and OS files
 .git
-.env*
-Dockerfile
-docker-compose.yml
+.DS_Store
+
+# Local dependencies
+node_modules
+
+# Build output
+.next
+dist
+build
+
+# Env files
+.env
+.env.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
