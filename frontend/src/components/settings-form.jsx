@@ -18,18 +18,20 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar.jsx';
 import { useAuth } from '@/context/auth-context.js';
 import * as React from 'react';
 import { Skeleton } from './ui/skeleton.jsx';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
     name: z.string().min(2, {
         message: 'Name must be at least 2 characters.',
     }),
     email: z.string().email(),
-    profilePicture: z.any().optional(),
+    // profilePicture is for display, not part of the schema
 });
 
 export function SettingsForm() {
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -48,13 +50,51 @@ export function SettingsForm() {
         }
     }, [user, form]);
 
-    function onSubmit(values) {
-        console.log(values);
-        toast({
-            title: 'Profile Updated',
-            description: 'Your settings have been saved successfully.',
-            variant: 'success',
-        });
+    async function onSubmit(values) {
+        setIsSubmitting(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token || !user?.id) {
+                throw new Error("Authentication error. Please log in again.");
+            }
+
+            const response = await fetch(`http://localhost:8080/user-service/users/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    name: values.name,
+                    email: values.email,
+                }),
+            });
+
+            const updatedUser = await response.json();
+
+            if (!response.ok) {
+                throw new Error(updatedUser.message || 'Failed to update profile.');
+            }
+
+
+            setUser(prevUser => ({ ...prevUser, ...updatedUser }));
+            localStorage.setItem('userData', JSON.stringify({ ...user, ...updatedUser }));
+
+            toast({
+                title: 'Profile Updated',
+                description: 'Your settings have been saved successfully.',
+            });
+
+        } catch (error) {
+            console.error("Settings update failed:", error);
+            toast({
+                title: 'Update Failed',
+                description: error.message,
+                variant: 'destructive',
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     if (!user) {
@@ -83,23 +123,13 @@ export function SettingsForm() {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-                {/* Left Column: Avatar + Phone */}
                 <div className="space-y-6">
-                    <FormField
-                        control={form.control}
-                        name="profilePicture"
-                        render={() => (
-                            <FormItem className="flex flex-col items-center gap-4">
-                                <Avatar className="h-28 w-28">
-                                    <AvatarImage src={user.avatar} data-ai-hint="woman portrait" />
-                                    <AvatarFallback>{user.name?.[0] || 'A'}</AvatarFallback>
-                                </Avatar>
-                            </FormItem>
-                        )}
-                    />
-
-                    {/* Phone Number (Read-only) */}
+                    <FormItem className="flex flex-col items-center gap-4">
+                        <Avatar className="h-28 w-28">
+                            <AvatarImage src={user.avatar} />
+                            <AvatarFallback>{user.name?.split(" ").map(n => n[0]).join("") || 'U'}</AvatarFallback>
+                        </Avatar>
+                    </FormItem>
                     <FormItem className="w-full">
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
@@ -113,7 +143,6 @@ export function SettingsForm() {
                     </FormItem>
                 </div>
 
-                {/* Right Column: Editable Fields */}
                 <div className="space-y-6">
                     <FormField
                         control={form.control}
@@ -128,7 +157,6 @@ export function SettingsForm() {
                             </FormItem>
                         )}
                     />
-
                     <FormField
                         control={form.control}
                         name="email"
@@ -142,8 +170,10 @@ export function SettingsForm() {
                             </FormItem>
                         )}
                     />
-
-                    <Button type="submit" className="mt-4">Save Changes</Button>
+                    <Button type="submit" className="mt-4" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                    </Button>
                 </div>
             </form>
         </Form>

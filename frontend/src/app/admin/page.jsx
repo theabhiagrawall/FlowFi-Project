@@ -241,7 +241,7 @@ export default function AdminPage() {
                                                         // ✅ Add the onClick handler
                                                         onClick={() => handleSuspendUser(user.id)}
                                                     >
-                                                        Suspend Account
+                                                        Delete Account
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
