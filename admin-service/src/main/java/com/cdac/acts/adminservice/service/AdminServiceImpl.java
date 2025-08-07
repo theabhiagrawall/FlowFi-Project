@@ -3,17 +3,17 @@ package com.cdac.acts.adminservice.service;
 import com.cdac.acts.adminservice.dto.KycInfoRequest;
 import com.cdac.acts.adminservice.dto.UpdateUserRequest;
 import com.cdac.acts.adminservice.dto.UserDTO;
-import com.cdac.acts.adminservice.entity.KycInfo;
-import com.cdac.acts.adminservice.entity.Role;
-import com.cdac.acts.adminservice.entity.Status;
-import com.cdac.acts.adminservice.entity.User;
+import com.cdac.acts.adminservice.entity.*;
 import com.cdac.acts.adminservice.exception.UserNotFoundException;
 import com.cdac.acts.adminservice.repository.KycInfoRepository;
 import com.cdac.acts.adminservice.repository.UserRepository;
+import com.cdac.acts.adminservice.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +24,7 @@ public class AdminServiceImpl implements AdminService {
     private final RestTemplate restTemplate;
     private final UserRepository userRepository;
     private final KycInfoRepository kycInfoRepository;
+    private final WalletRepository  walletRepository;
 
     @Value("${user.service.name}")
     private String userServiceName;
@@ -33,16 +34,41 @@ public class AdminServiceImpl implements AdminService {
 
     public AdminServiceImpl(RestTemplate restTemplate,
                             UserRepository userRepository,
-                            KycInfoRepository kycInfoRepository) {
+                            KycInfoRepository kycInfoRepository, WalletRepository walletRepository) {
         this.restTemplate = restTemplate;
         this.userRepository = userRepository;
         this.kycInfoRepository = kycInfoRepository;
+        this.walletRepository = walletRepository;
     }
 
     @Override
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDTO> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        List<UserDTO> userDTOs = new ArrayList<>();
+
+        for (User user : users) {
+            UserDTO dto = new UserDTO();
+            dto.setId(user.getId());
+            dto.setName(user.getName());
+            dto.setEmail(user.getEmail());
+            dto.setPhoneNumber(user.getPhoneNumber());
+            dto.setStatus(user.getStatus().toString());
+            dto.setRole(user.getRole().toString());
+            dto.setEmailVerified(user.isEmailVerified());
+            dto.setKycVerified(user.isKycVerified());
+            dto.setCreatedAt(user.getCreatedAt().toLocalDateTime());
+
+            // ✅ Correct balance fetch by user ID
+            BigDecimal balance = walletRepository.findByUserId(user.getId())
+                    .map(Wallet::getBalance)
+                    .orElse(BigDecimal.ZERO);
+
+            dto.setWalletBalance(balance);
+            userDTOs.add(dto);
+        }
+        return userDTOs;
     }
+
 
     @Override
     public UserDTO getUserById(UUID id) {

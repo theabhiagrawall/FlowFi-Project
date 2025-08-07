@@ -25,7 +25,7 @@ export default function AnalyticsPage() {
                         <ArrowDown className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$2,350.00</div>
+                        <div className="text-2xl font-bold">₹2,350.00</div>
                         <p className="text-xs text-muted-foreground">+10.5% from last month</p>
                     </CardContent>
                 </Card>
@@ -35,7 +35,7 @@ export default function AnalyticsPage() {
                         <ArrowUp className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$1,210.50</div>
+                        <div className="text-2xl font-bold">₹1,210.50</div>
                         <p className="text-xs text-muted-foreground">+5.2% from last month</p>
                     </CardContent>
                 </Card>

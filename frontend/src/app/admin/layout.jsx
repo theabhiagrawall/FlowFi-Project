@@ -1,24 +1,56 @@
+'use client';
+
+import { useState, useEffect } from "react";
 import Logo from "@/components/logo.jsx";
 import UserNav from "@/components/user-nav.jsx";
 import PrivateRoute from "@/components/private-route.jsx";
 
-export default function AdminLayout({
-                                        children,
-                                    }) {
+export default function AdminLayout({ children }) {
+    const fullText = "Admin Panel";
+    const [displayedText, setDisplayedText] = useState("");
+    const [isTypingDone, setIsTypingDone] = useState(false);
+
+    useEffect(() => {
+        let i = 0;
+        const interval = setInterval(() => {
+            setDisplayedText(fullText.slice(0, i + 1));
+            i++;
+            if (i === fullText.length) {
+                clearInterval(interval);
+                setIsTypingDone(true);
+            }
+        }, 150); // typing speed in ms
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <PrivateRoute>
             <div className="flex min-h-screen w-full flex-col">
-                <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-                    <Logo />
-                    <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-                        <span className="font-bold text-lg">Admin Panel</span>
-                    </nav>
-                    <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-                        <div className="ml-auto flex-1 sm:flex-initial">
-                            <UserNav />
-                        </div>
+                <header className="sticky top-0 flex h-16 items-center border-b bg-background px-4 md:px-6">
+                    {/* Left: Logo */}
+                    <div className="flex items-center">
+                        <Logo />
+                    </div>
+
+                    {/* Center: Admin Panel Animation */}
+                    <div className="flex flex-1 justify-center">
+                        <nav>
+                            <span
+                                className={`font-bold text-lg whitespace-nowrap font-[cursive] ${
+                                    !isTypingDone ? "border-r-2 border-black pr-1 animate-pulse" : ""
+                                }`}
+                            >
+                                {displayedText}
+                            </span>
+                        </nav>
+                    </div>
+
+                    {/* Right: UserNav */}
+                    <div className="flex items-center">
+                        <UserNav />
                     </div>
                 </header>
+
                 <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                     {children}
                 </main>
