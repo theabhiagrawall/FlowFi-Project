@@ -37,14 +37,19 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    // ✅ Change return type to List<AdminUserViewDTO>
     public List<AdminUserViewDTO> getAllUsers() {
         List<User> users = userRepository.findAll();
-        // ✅ Change DTO type
         List<AdminUserViewDTO> userDTOs = new ArrayList<>();
 
+        // ✅ Define the ID to be excluded
+        final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
         for (User user : users) {
-            // ✅ Use the new DTO
+            // ✅ Check if the user ID matches the system ID, and skip if it does
+            if (user.getId().equals(SYSTEM_USER_ID)) {
+                continue;
+            }
+
             AdminUserViewDTO dto = new AdminUserViewDTO();
             dto.setId(user.getId());
             dto.setName(user.getName());
@@ -54,7 +59,6 @@ public class AdminServiceImpl implements AdminService {
             dto.setRole(user.getRole().toString());
             dto.setEmailVerified(user.isEmailVerified());
 
-            // ✅ Logic to determine kycStatus string
             Optional<KycInfo> kycInfoOpt = kycInfoRepository.findByUserId(user.getId());
             if (user.isKycVerified()) {
                 dto.setKycStatus("Verified");
