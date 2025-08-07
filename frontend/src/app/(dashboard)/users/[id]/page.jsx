@@ -48,6 +48,7 @@ export default function UserTransactionPage() {
     toast({
       title: 'Payment Sent!',
       description: `You have sent $${amount} to ${otherUser?.name}.`,
+        variant: 'success',
     });
     e.currentTarget.reset();
   };

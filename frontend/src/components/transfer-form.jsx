@@ -168,6 +168,7 @@ export function TransferForm() {
             toast({
                 title: 'Transfer Successful',
                 description: `You have sent $${values.amount.toFixed(2)} to ${selectedUser.name}.`,
+                variant: 'success',
             });
 
             setSelectedUser(null);
