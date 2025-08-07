@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Logo from "@/components/logo.jsx";
 import UserNav from "@/components/user-nav.jsx";
 import PrivateRoute from "@/components/private-route.jsx";
+import DashboardSidebar from "@/components/dashboard-sidebar";
 
 export default function AdminLayout({ children }) {
     const fullText = "Admin Panel";
@@ -25,21 +26,19 @@ export default function AdminLayout({ children }) {
 
     return (
         <PrivateRoute>
-            <div className="flex min-h-screen w-full flex-col">
-                <header className="sticky top-0 flex h-16 items-center border-b bg-background px-4 md:px-6">
-                    {/* Left: Logo */}
+            <DashboardSidebar />
+            <div className="flex min-h-screen w-full flex-col sm:pl-14">
+                <header className="sticky top-0 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
                     <div className="flex items-center">
                         <Logo />
                     </div>
-
-                    {/* Center: Admin Panel Animation */}
                     <div className="flex flex-1 justify-center">
                         <nav>
-                            <span
-                                className={`font-bold text-lg whitespace-nowrap font-[cursive] ${
-                                    !isTypingDone ? "border-r-2 border-black pr-1 animate-pulse" : ""
-                                }`}
-                            >
+                           <span
+                               className={`font-bold text-lg whitespace-nowrap ${
+                                   !isTypingDone ? "border-r-2 border-black pr-1 animate-pulse" : ""
+                               }`}
+                           >
                                 {displayedText}
                             </span>
                         </nav>
