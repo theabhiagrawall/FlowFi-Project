@@ -1,5 +1,6 @@
 package com.cdac.acts.transactionservice.service;
 
+import com.cdac.acts.transactionservice.dto.AnalyticsResponseDto;
 import com.cdac.acts.transactionservice.dto.FrequentContactDto;
 import com.cdac.acts.transactionservice.dto.TransactionRequest;
 import com.cdac.acts.transactionservice.dto.TransactionResponse;
@@ -29,4 +30,6 @@ public interface TransactionService {
     void deleteTransaction(UUID transactionId);
 
     List<FrequentContactDto> getFrequentContacts(UUID walletId, int limit);
+
+    AnalyticsResponseDto getAnalyticsData(UUID walletId);
 }

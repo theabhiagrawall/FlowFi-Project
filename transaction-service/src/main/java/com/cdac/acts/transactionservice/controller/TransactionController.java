@@ -1,5 +1,6 @@
 package com.cdac.acts.transactionservice.controller;
 
+import com.cdac.acts.transactionservice.dto.AnalyticsResponseDto;
 import com.cdac.acts.transactionservice.dto.FrequentContactDto;
 import com.cdac.acts.transactionservice.dto.TransactionRequest;
 import com.cdac.acts.transactionservice.dto.TransactionResponse;
@@ -85,5 +86,10 @@ public class TransactionController {
 
         List<FrequentContactDto> contacts = transactionService.getFrequentContacts(walletId, limit);
         return ResponseEntity.ok(contacts);
+    }
+    @GetMapping("/analytics/{walletId}")
+    public ResponseEntity<AnalyticsResponseDto> getAnalyticsData(@PathVariable UUID walletId) {
+        AnalyticsResponseDto analyticsData = transactionService.getAnalyticsData(walletId);
+        return ResponseEntity.ok(analyticsData);
     }
 }
