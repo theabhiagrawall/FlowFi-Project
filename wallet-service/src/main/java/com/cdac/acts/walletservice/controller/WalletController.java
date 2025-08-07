@@ -23,8 +23,8 @@ public class WalletController {
     }
 
     @GetMapping
-    public String Home(){
-        return "APT gate way found its way to this controller :) 🥂🥂🥂";
+    public ResponseEntity<String> home() {
+        return ResponseEntity.ok("Token is valid");
     }
 
     @PostMapping

@@ -20,6 +20,7 @@ import { useAuth } from '@/context/auth-context.js';
 import { apiFetch } from '@/lib/api.js';
 import { useToast } from '@/hooks/use-toast.js';
 import * as React from 'react';
+import {useEffect} from "react";
 
 const formSchema = z.object({
     phoneNumber: z.string().length(10, {
@@ -43,6 +44,13 @@ export function LoginForm() {
       password: '',
     },
   });
+
+    useEffect(() => {
+        const token = localStorage.getItem("authToken");
+        if(token){
+            router.replace("/dashboard");
+        }
+    }, []);
 
   async function onSubmit(values) {
       setIsLoading(true);

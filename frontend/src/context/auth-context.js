@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/api.js';
+import {toast} from "@/hooks/use-toast";
 
 // Create the context
 const AuthContext = createContext(null);
@@ -11,11 +11,11 @@ const AuthContext = createContext(null);
  * It provides the user, token, login, and logout functions to its children.
  */
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] =  useState(null);
   const [token, setToken] = useState(null);
+  // Start with loading true, as we need to validate the token
   const [loading, setLoading] = useState(true);
 
-  // On initial load, check for a token in local storage
   useEffect(() => {
     const storedToken = localStorage.getItem('authToken');
     const storedUser = localStorage.getItem('userData');
@@ -23,18 +23,48 @@ export function AuthProvider({ children }) {
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
-      // o fetch the user profile here to verify the token is still valid
-      // apiFetch('/users/me')
-      //   .then(data => setUser(data))
-      //   .catch(() => {
-      //     // If token is invalid, log out
-      //     logout();
-      //   })
-      //   .finally(() => setLoading(false));
+    } else {
+
       setLoading(false);
     }
-    setLoading(false);
-  }, []);
+  }, []); // This empty dependency array ensures this runs only once on mount.
+
+  useEffect(() => {
+    // If there's no token, we have nothing to validate.
+    if (!token) {
+      return;
+    }
+
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+    fetch(`http://localhost:8080/wallet-service/wallets`, {
+      method: 'GET', // Explicitly setting the method
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+        .then(response => {
+          if (!response.ok) {
+            toast({
+              title: 'Authentication failed',
+              description: `Authentication failed with status: ${response.status}`,
+              variant: 'destructive',
+            });
+
+          }
+        })
+        .then(() => {
+          console.log("Token validated successfully.");
+        })
+        .catch((error) => {
+          console.error("Token validation failed:", error.message);
+          logout();
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+  }, [token]); //
 
   /**
    * login function

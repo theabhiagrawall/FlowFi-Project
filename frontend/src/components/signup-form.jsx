@@ -37,9 +37,16 @@ const formSchema = z.object({
 
 export function SignupForm() {
     const router = useRouter();
-    const { login } = useAuth();
+    const { login, isAuthenticated, loading: authLoading } = useAuth();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = React.useState(false);
+
+    React.useEffect(() => {
+        if (!authLoading && isAuthenticated) {
+            router.push('/dashboard');
+        }
+    }, [isAuthenticated, authLoading, router]);
+
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -54,7 +61,6 @@ export function SignupForm() {
     async function onSubmit(values) {
         setIsLoading(true);
         try {
-            // This is where you would call your backend API
             const response = await fetch('http://localhost:8080/auth-service/api/auth/register', {
                 method: 'POST',
                 headers: {
@@ -87,6 +93,10 @@ export function SignupForm() {
         } finally {
             setIsLoading(false);
         }
+    }
+
+    if (authLoading) {
+        return <div>Loading...</div>; // Or return null;
     }
 
     return (

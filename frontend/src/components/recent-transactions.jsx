@@ -111,7 +111,7 @@ export default function RecentTransactions() {
           const namePromises = Array.from(walletIdsToFetch).map(async (walletId) => {
             try {
               // Step 1: Get user ID from wallet ID
-              const walletRes = await fetch(`http://localhost:8080/wallet-service/api/wallets/${walletId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+              const walletRes = await fetch(`http://localhost:8080/wallet-service/wallets/${walletId}`, { headers: { 'Authorization': `Bearer ${token}` } });
               if (!walletRes.ok) return [walletId, 'Unknown User'];
               const walletData = await walletRes.json();
 

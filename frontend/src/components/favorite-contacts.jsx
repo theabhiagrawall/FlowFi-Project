@@ -60,7 +60,7 @@ export default function FavoriteContacts() {
                 }
 
                 // 2. Fetch frequent contacts from the new endpoint
-                const response = await fetch(`http://localhost:8080/transaction-service/api/transactions/frequent-contacts/${walletId}?limit=6`, {
+                const response = await fetch(`http://localhost:8080/transaction-service/api/transactions/frequent-contacts/${walletId}?limit=10`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
