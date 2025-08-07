@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface KycInfoRepository extends JpaRepository<KycInfo, UUID> {
     Optional<KycInfo> findByUserId(UUID userId);
+    void deleteByUserId(UUID userId);
 }

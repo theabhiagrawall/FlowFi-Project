@@ -4,5 +4,6 @@ package com.cdac.acts.adminservice.entity;
 public enum Status {
     active,
     inactive,
-    blocked
+    blocked,
+    suspended
 }

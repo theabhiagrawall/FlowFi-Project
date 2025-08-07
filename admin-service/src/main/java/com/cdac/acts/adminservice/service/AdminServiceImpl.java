@@ -1,5 +1,6 @@
 package com.cdac.acts.adminservice.service;
 
+import com.cdac.acts.adminservice.dto.AdminUserViewDTO;
 import com.cdac.acts.adminservice.dto.KycInfoRequest;
 import com.cdac.acts.adminservice.dto.UpdateUserRequest;
 import com.cdac.acts.adminservice.dto.UserDTO;
@@ -8,6 +9,7 @@ import com.cdac.acts.adminservice.exception.UserNotFoundException;
 import com.cdac.acts.adminservice.repository.KycInfoRepository;
 import com.cdac.acts.adminservice.repository.UserRepository;
 import com.cdac.acts.adminservice.repository.WalletRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -21,33 +23,29 @@ import java.util.UUID;
 @Service
 public class AdminServiceImpl implements AdminService {
 
-    private final RestTemplate restTemplate;
     private final UserRepository userRepository;
     private final KycInfoRepository kycInfoRepository;
     private final WalletRepository  walletRepository;
 
-    @Value("${user.service.name}")
-    private String userServiceName;
 
-    @Value("${user.service.route}")
-    private String userServiceRoute;
-
-    public AdminServiceImpl(RestTemplate restTemplate,
+    public AdminServiceImpl(
                             UserRepository userRepository,
                             KycInfoRepository kycInfoRepository, WalletRepository walletRepository) {
-        this.restTemplate = restTemplate;
         this.userRepository = userRepository;
         this.kycInfoRepository = kycInfoRepository;
         this.walletRepository = walletRepository;
     }
 
     @Override
-    public List<UserDTO> getAllUsers() {
+    // ✅ Change return type to List<AdminUserViewDTO>
+    public List<AdminUserViewDTO> getAllUsers() {
         List<User> users = userRepository.findAll();
-        List<UserDTO> userDTOs = new ArrayList<>();
+        // ✅ Change DTO type
+        List<AdminUserViewDTO> userDTOs = new ArrayList<>();
 
         for (User user : users) {
-            UserDTO dto = new UserDTO();
+            // ✅ Use the new DTO
+            AdminUserViewDTO dto = new AdminUserViewDTO();
             dto.setId(user.getId());
             dto.setName(user.getName());
             dto.setEmail(user.getEmail());
@@ -55,10 +53,19 @@ public class AdminServiceImpl implements AdminService {
             dto.setStatus(user.getStatus().toString());
             dto.setRole(user.getRole().toString());
             dto.setEmailVerified(user.isEmailVerified());
-            dto.setKycVerified(user.isKycVerified());
+
+            // ✅ Logic to determine kycStatus string
+            Optional<KycInfo> kycInfoOpt = kycInfoRepository.findByUserId(user.getId());
+            if (user.isKycVerified()) {
+                dto.setKycStatus("Verified");
+            } else if (kycInfoOpt.isPresent()) {
+                dto.setKycStatus("Pending");
+            } else {
+                dto.setKycStatus("Unverified");
+            }
+
             dto.setCreatedAt(user.getCreatedAt().toLocalDateTime());
 
-            // ✅ Correct balance fetch by user ID
             BigDecimal balance = walletRepository.findByUserId(user.getId())
                     .map(Wallet::getBalance)
                     .orElse(BigDecimal.ZERO);
@@ -70,19 +77,51 @@ public class AdminServiceImpl implements AdminService {
     }
 
 
-    @Override
     public UserDTO getUserById(UUID id) {
-        String url = "http://" + userServiceName + "/" + userServiceRoute + "/users/" + id;
-        return restTemplate.getForObject(url, UserDTO.class);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // ✅ Now this method will convert the populated User object to a DTO
+        return convertToDto(user);
     }
 
+    private UserDTO convertToDto(User user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setStatus(user.getStatus().toString());
+        dto.setRole(user.getRole().toString());
+        dto.setEmailVerified(user.isEmailVerified());
+        dto.setKycVerified(user.isKycVerified());
+        dto.setCreatedAt(user.getCreatedAt().toLocalDateTime());
+
+        BigDecimal balance = walletRepository.findByUserId(user.getId())
+                .map(Wallet::getBalance)
+                .orElse(BigDecimal.ZERO);
+        dto.setWalletBalance(balance);
+
+        return dto;
+    }
+
+
     @Override
+    @Transactional
     public void deleteUser(UUID id) {
-        String url = "http://" + userServiceName + "/" + userServiceRoute + "/users/" + id;
-        restTemplate.delete(url);
+        // Check if the user exists
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User with ID " + id + " not found."));
+
+        walletRepository.deleteByUserId(id);
+
+        kycInfoRepository.deleteByUserId(id);
+
+        userRepository.deleteById(id);
     }
 
     @Override
+    @Transactional
     public String addOrUpdateKycInfo(UUID userId, KycInfoRequest dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -109,6 +148,7 @@ public class AdminServiceImpl implements AdminService {
 
 
     @Override
+    @Transactional
     public void updateUserByAdmin(UUID userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
@@ -131,6 +171,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional
     public void approveKyc(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -149,6 +190,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional
     public void rejectKyc(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));

@@ -1,3 +1,5 @@
+// File: components/admin/AdminPage.jsx
+
 "use client";
 
 import {
@@ -30,10 +32,14 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils.js";
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast.js";
 
 export default function AdminPage() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
+
+    // ... (Your helper functions getInitials, formatCurrency, getKycStatusVariant)
 
     const getInitials = (name) => {
         const names = name.split(" ");
@@ -66,29 +72,69 @@ export default function AdminPage() {
         }
     };
 
+    const fetchUsers = async () => {
+        const token = localStorage.getItem("authToken");
+        setLoading(true);
+
+        try {
+            const res = await fetch("http://localhost:8080/admin-service/admin", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) throw new Error("Failed to fetch users");
+
+            const data = await res.json();
+            setUsers(data);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            toast({
+                title: "Error",
+                description: "Failed to fetch user list.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchUsers = async () => {
-            const token = localStorage.getItem("authToken");
-
-            try {
-                const res = await fetch("http://localhost:8080/admin-service/admin", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                if (!res.ok) throw new Error("Failed to fetch users");
-
-                const data = await res.json();
-                setUsers(data);
-            } catch (error) {
-                console.error("Error fetching users:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchUsers();
     }, []);
+
+    // ✅ New function to handle user suspension
+    const handleSuspendUser = async (userId) => {
+        const token = localStorage.getItem("authToken");
+
+        try {
+            const res = await fetch(`http://localhost:8080/admin-service/admin/users/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                throw new Error("Failed to suspend user.");
+            }
+
+            // Remove the user from the state to update the UI
+            setUsers(users.filter(user => user.id !== userId));
+
+            toast({
+                title: "Success",
+                description: "User account has been suspended.",
+            });
+        } catch (error) {
+            console.error("Error suspending user:", error);
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive",
+            });
+        }
+    };
 
     return (
         <div>
@@ -190,7 +236,11 @@ export default function AdminPage() {
                                                         </>
                                                     )}
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-destructive">
+                                                    <DropdownMenuItem
+                                                        className="text-destructive"
+                                                        // ✅ Add the onClick handler
+                                                        onClick={() => handleSuspendUser(user.id)}
+                                                    >
                                                         Suspend Account
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>

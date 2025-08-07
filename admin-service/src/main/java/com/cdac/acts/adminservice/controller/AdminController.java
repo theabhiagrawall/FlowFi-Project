@@ -1,5 +1,6 @@
 package com.cdac.acts.adminservice.controller;
 
+import com.cdac.acts.adminservice.dto.AdminUserViewDTO;
 import com.cdac.acts.adminservice.dto.KycInfoRequest;
 import com.cdac.acts.adminservice.dto.UpdateUserRequest;
 import com.cdac.acts.adminservice.dto.UserDTO;
@@ -27,7 +28,7 @@ public class AdminController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
+    public ResponseEntity<List<AdminUserViewDTO>> getAllUsers() {
         return ResponseEntity.ok(adminService.getAllUsers());
     }
 
@@ -42,8 +43,6 @@ public class AdminController {
         adminService.updateUserByAdmin(id, request);
         return ResponseEntity.ok("User updated successfully.");
     }
-
-
 
     @PostMapping("/kyc/{id}")
     public ResponseEntity<String> addOrUpdateKyc(
@@ -64,7 +63,6 @@ public class AdminController {
         adminService.rejectKyc(userId);
         return ResponseEntity.ok("KYC rejected and info deleted.");
     }
-
 
     @DeleteMapping("/users/{id}")
     public ResponseEntity<Void> suspendUser(@PathVariable UUID id) {

@@ -1,5 +1,6 @@
 package com.cdac.acts.adminservice.service;
 
+import com.cdac.acts.adminservice.dto.AdminUserViewDTO;
 import com.cdac.acts.adminservice.dto.KycInfoRequest;
 import com.cdac.acts.adminservice.dto.UpdateUserRequest;
 import com.cdac.acts.adminservice.dto.UserDTO;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface AdminService {
-    List<UserDTO> getAllUsers(); // From Admin DB
+    List<AdminUserViewDTO> getAllUsers(); // From Admin DB
     UserDTO getUserById(UUID id); // From user-service
     void deleteUser(UUID id); // From user-service
 

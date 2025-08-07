@@ -17,6 +17,12 @@ public class User {
     private String email;
     private String name;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Wallet wallet;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private KycInfo kycInfo;
+
     @Enumerated(EnumType.STRING)
     private Status status;
 
@@ -114,5 +120,21 @@ public class User {
 
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Wallet getWallet() {
+        return wallet;
+    }
+
+    public void setWallet(Wallet wallet) {
+        this.wallet = wallet;
+    }
+
+    public KycInfo getKycInfo() {
+        return kycInfo;
+    }
+
+    public void setKycInfo(KycInfo kycInfo) {
+        this.kycInfo = kycInfo;
     }
 }
