@@ -4,17 +4,23 @@ import { useAuth } from '@/context/auth-context.js';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader } from 'lucide-react';
+import {toast} from "@/hooks/use-toast";
 
 export default function PrivateRoute({ children }) {
     const { isAuthenticated, loading } = useAuth();
+    const {user} = useAuth();
     const router = useRouter();
 
     useEffect(() => {
         if (!loading && !isAuthenticated) {
+            toast({
+                title: 'Authentication failed',
+                description: `Authentication failed!`,
+                variant: 'destructive',
+            });
             router.push('/login');
         }else{
-            console.log("Authenticated user ");
-            router.push("/dashboard");
+            // user.role === "user"?router.push("/dashboard"):router.push("/admin");
         }
     }, [isAuthenticated, loading, router]);
 

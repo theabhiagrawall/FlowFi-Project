@@ -25,7 +25,6 @@ export default function UserNav() {
   const { setTheme } = useTheme();
 
   const getInitials = (name) => {
-    console.log(user);
     if (!name) return "";
     const names = name.split(' ');
     if (names.length > 1) {
@@ -55,7 +54,7 @@ export default function UserNav() {
               className="overflow-hidden rounded-full"
           >
             <Avatar>
-              <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="woman portrait" />
+              <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="man portrait" />
               <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
             </Avatar>
           </Button>

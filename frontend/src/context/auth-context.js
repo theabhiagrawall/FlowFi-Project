@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {toast} from "@/hooks/use-toast";
+import {router} from "next/client";
 
 // Create the context
 const AuthContext = createContext(null);
@@ -51,14 +52,18 @@ export function AuthProvider({ children }) {
               description: `Authentication failed with status: ${response.status}`,
               variant: 'destructive',
             });
-
+            router.push('/login');
           }
         })
         .then(() => {
           console.log("Token validated successfully.");
         })
         .catch((error) => {
-          console.error("Token validation failed:", error.message);
+            toast({
+                title: 'Authentication failed',
+                description: `Authentication failed!`,
+                variant: 'destructive',
+            });
           logout();
         })
         .finally(() => {
