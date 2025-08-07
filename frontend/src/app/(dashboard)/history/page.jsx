@@ -137,7 +137,7 @@ export default function HistoryPage() {
 
                     const namePromises = Array.from(walletIdsToFetch).map(async (walletId) => {
                         try {
-                            const walletRes = await fetch(`http://localhost:8080/wallet-service/api/wallets/${walletId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                            const walletRes = await fetch(`http://localhost:8080/wallet-service/wallets/${walletId}`, { headers: { 'Authorization': `Bearer ${token}` } });
                             if (!walletRes.ok) return [walletId, 'Unknown User'];
                             const walletData = await walletRes.json();
 
