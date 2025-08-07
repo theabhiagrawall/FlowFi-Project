@@ -81,6 +81,7 @@ export function SignupForm() {
             toast({
                 title: 'Registration Successful',
                 description: 'Welcome to flow fi!',
+                variant: 'success',
             });
             router.push('/dashboard');
 

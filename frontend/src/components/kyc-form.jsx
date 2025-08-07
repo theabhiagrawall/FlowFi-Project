@@ -62,6 +62,7 @@ export function KycForm() {
             title: 'KYC Submitted',
             description:
                 'Your documents are under review. This may take up to 24 hours.',
+            variant: 'success',
         });
     }
 

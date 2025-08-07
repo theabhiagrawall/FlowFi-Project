@@ -34,6 +34,7 @@ export default function AdminUserDetailsPage() {
     toast({
       title: "User Updated",
       description: `${user.name}'s details have been updated.`,
+        variant: 'success',
     });
   }
 
