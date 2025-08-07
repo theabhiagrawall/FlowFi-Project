@@ -19,4 +19,7 @@ public interface AdminService {
     void updateUserByAdmin(UUID userId, UpdateUserRequest request);
     void approveKyc(UUID userId);
     void rejectKyc(UUID userId);
+
+    boolean getKycVerifiedStatus(UUID userId);
+
 }

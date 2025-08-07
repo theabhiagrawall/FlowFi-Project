@@ -69,4 +69,11 @@ public class AdminController {
         adminService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/kyc/status/{userId}")
+    public ResponseEntity<Boolean> getKycVerifiedStatus(@PathVariable UUID userId) {
+        boolean verified = adminService.getKycVerifiedStatus(userId);
+        return ResponseEntity.ok(verified);
+    }
+
 }

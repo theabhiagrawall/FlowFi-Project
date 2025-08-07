@@ -206,5 +206,15 @@ public class AdminServiceImpl implements AdminService {
         userRepository.save(user);
     }
 
+    @Override
+    @Transactional
+    public boolean getKycVerifiedStatus(UUID userId) {
+        return kycInfoRepository.findByUserId(userId)
+                .map(KycInfo::isVerified)
+                .orElseThrow(() -> new RuntimeException("KYC info not found for user: " + userId));
+
+    }
+
+
 }
 
