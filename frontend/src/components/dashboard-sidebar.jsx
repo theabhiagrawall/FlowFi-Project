@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react'; // ✅ Import useEffect
 import {
   Tooltip,
   TooltipContent,
@@ -14,29 +15,67 @@ import {
   ArrowRightLeft,
   Settings,
   History,
-  ShieldCheck, // Icon for Admin
+  ShieldCheck,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils.js';
-import { useAuth } from '@/context/auth-context.js'; // Import useAuth
+import { useAuth } from '@/context/auth-context.js';
 
 const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/analytics', icon: TrendingUp, label: 'Analytics' },
-  { href: '/transfer', icon: ArrowRightLeft, label: 'Transfer' },
-  { href: '/history', icon: History, label: 'History' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', restricted: false },
+  { href: '/analytics', icon: TrendingUp, label: 'Analytics', restricted: true },
+  { href: '/transfer', icon: ArrowRightLeft, label: 'Transfer', restricted: true },
+  { href: '/history', icon: History, label: 'History', restricted: true },
 ];
 
-// Define the admin and settings items separately
 const adminItem = { href: '/admin', icon: ShieldCheck, label: 'Admin' };
 const settingsItem = { href: '/settings', icon: Settings, label: 'Settings' };
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth(); // ✅ Get setUser to update the context
+
+
+  useEffect(() => {
+    // Don't run if we don't have a user ID yet
+    if (!user?.id) return;
+
+    const fetchFreshUser = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`http://localhost:8080/user-service/users/${user.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+
+          console.error("Failed to fetch fresh user data.");
+          return;
+        }
+
+        const freshUserData = await response.json();
+
+        // Update the global context and localStorage with the latest data
+        setUser(freshUserData);
+        localStorage.setItem('userData', JSON.stringify(freshUserData));
+
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchFreshUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Run this effect when the user ID becomes available
+
+
+
+  const isFullyVerified = user?.kycVerified && user?.emailVerified && user?.status === 'active';
 
   return (
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
         <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
+          {/* ... SVG Logo Link remains the same ... */}
           <Link
               href="/"
               className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
@@ -59,23 +98,34 @@ export default function DashboardSidebar() {
             <span className="sr-only">FlowFi</span>
           </Link>
           <TooltipProvider>
-            {navItems.map((item) => (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>
-                    <Link
-                        href={item.href}
-                        className={cn(
-                            'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8',
-                            pathname === item.href && 'bg-accent text-accent-foreground'
-                        )}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span className="sr-only">{item.label}</span>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">{item.label}</TooltipContent>
-                </Tooltip>
-            ))}
+            {navItems.map((item) => {
+
+              const isDisabled = item.restricted && !isFullyVerified;
+              const Icon = isDisabled ? Lock : item.icon; // Use Lock icon if disabled
+
+              return (
+                  <Tooltip key={item.href}>
+                    <TooltipTrigger asChild>
+                      <Link
+                          // If disabled, prevent navigation.
+                          href={isDisabled ? '#' : item.href}
+                          className={cn(
+                              'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8',
+                              pathname === item.href && !isDisabled && 'bg-accent text-accent-foreground',
+                              isDisabled && 'cursor-not-allowed opacity-50' // Style for disabled state
+                          )}
+                      >
+                        <Icon className="h-5 w-5" />
+                        <span className="sr-only">{item.label}</span>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      {/* Show a different message for disabled items */}
+                      {isDisabled ? 'Verification Required' : item.label}
+                    </TooltipContent>
+                  </Tooltip>
+              );
+            })}
           </TooltipProvider>
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
@@ -83,13 +133,7 @@ export default function DashboardSidebar() {
             {user?.role === 'admin' && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link
-                        href={adminItem.href}
-                        className={cn(
-                            'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8',
-                            pathname === adminItem.href && 'bg-accent text-accent-foreground'
-                        )}
-                    >
+                    <Link href={adminItem.href} className={cn('flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8', pathname === adminItem.href && 'bg-accent text-accent-foreground' )}>
                       <adminItem.icon className="h-5 w-5" />
                       <span className="sr-only">{adminItem.label}</span>
                     </Link>
@@ -98,15 +142,10 @@ export default function DashboardSidebar() {
                 </Tooltip>
             )}
 
+            {/* Settings link remains enabled */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link
-                    href={settingsItem.href}
-                    className={cn(
-                        'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8',
-                        pathname === settingsItem.href && 'bg-accent text-accent-foreground'
-                    )}
-                >
+                <Link href={settingsItem.href} className={cn('flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8', pathname === settingsItem.href && 'bg-accent text-accent-foreground' )}>
                   <settingsItem.icon className="h-5 w-5" />
                   <span className="sr-only">{settingsItem.label}</span>
                 </Link>
