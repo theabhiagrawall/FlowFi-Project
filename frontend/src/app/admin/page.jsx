@@ -132,7 +132,6 @@ export default function AdminPage() {
         }
     };
 
-    // ✅ New function to handle KYC approval
     const handleApproveKyc = async (userId) => {
         const token = localStorage.getItem("authToken");
         try {
@@ -163,7 +162,6 @@ export default function AdminPage() {
         }
     };
 
-    // ✅ New function to handle KYC rejection
     const handleRejectKyc = async (userId) => {
         const token = localStorage.getItem("authToken");
         try {
@@ -186,6 +184,35 @@ export default function AdminPage() {
             });
         } catch (error) {
             console.error("Error rejecting KYC:", error);
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleViewDocument = async (userId) => {
+        const token = localStorage.getItem("authToken");
+        toast({ title: "Please wait", description: "Fetching document..." });
+
+        try {
+            const res = await fetch(`http://localhost:8080/admin-service/kyc-documents/view/${userId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                throw new Error(`Failed to fetch document. Server responded with ${res.status}.`);
+            }
+
+            const documentBlob = await res.blob();
+            const documentUrl = URL.createObjectURL(documentBlob);
+            window.open(documentUrl, '_blank');
+
+        } catch (error) {
+            console.error("Error viewing document:", error);
             toast({
                 title: "Error",
                 description: error.message,
@@ -269,23 +296,21 @@ export default function AdminPage() {
                                                             View User Details
                                                         </Link>
                                                     </DropdownMenuItem>
+                                                    {/* ✅ This now correctly uses your original logic */}
                                                     {user.kycStatus?.toLowerCase() === "unverified" && (
                                                         <>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuLabel>KYC Verification</DropdownMenuLabel>
-                                                            <DropdownMenuItem asChild>
-                                                                {/* ✅ Corrected the Link href */}
-                                                                <Link
-                                                                    href={`http://localhost:8080/admin-service/kyc-documents/view/${user.id}`}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className={cn(
-                                                                        !user.kycDocumentUrl &&
-                                                                        "pointer-events-none opacity-50"
-                                                                    )}
-                                                                >
-                                                                    <FileText /> View Document
-                                                                </Link>
+                                                            {/* ✅ This is the only changed part in the dropdown */}
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleViewDocument(user.id)}
+                                                                disabled={!user.kycDocumentUrl}
+                                                                className={cn(
+                                                                    "flex items-center gap-2 cursor-pointer",
+                                                                    !user.kycDocumentUrl && "opacity-50"
+                                                                )}
+                                                            >
+                                                                <FileText className="h-4 w-4" /> View Document
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => handleApproveKyc(user.id)}>
                                                                 <CheckCircle className="text-green-500" /> Approve
