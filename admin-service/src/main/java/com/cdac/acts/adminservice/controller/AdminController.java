@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -69,11 +70,14 @@ public class AdminController {
         adminService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
-
     @GetMapping("/kyc/status/{userId}")
-    public ResponseEntity<Boolean> getKycVerifiedStatus(@PathVariable UUID userId) {
-        boolean verified = adminService.getKycVerifiedStatus(userId);
-        return ResponseEntity.ok(verified);
+    public ResponseEntity<Map<String, String>> getKycStatus(@PathVariable UUID userId) {
+
+        boolean status = adminService.getKycVerifiedStatus(userId);
+
+        Map<String, String> response = Map.of("status", String.valueOf(status));
+
+        return ResponseEntity.ok(response);
     }
 
 }

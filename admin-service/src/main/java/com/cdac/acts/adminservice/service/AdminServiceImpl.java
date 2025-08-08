@@ -217,7 +217,5 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("KYC info not found for user: " + userId));
 
     }
-
-
 }
 
