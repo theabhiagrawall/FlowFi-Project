@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/form.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { useToast } from '@/hooks/use-toast.js';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert.jsx';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert.jsx';
 import { CheckCircle, Clock, XCircle, Eye, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context.js';
 import * as React from 'react';
@@ -46,13 +46,14 @@ const formSchema = z.object({
         ),
 });
 
+// FIX: Changed to a named export to match the import in SettingsPage
 export function KycForm() {
     const { toast } = useToast();
     const { user, setUser } = useAuth();
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [previewUrl, setPreviewUrl] = React.useState(null);
-    // --- NEW: State for loading the document viewer ---
     const [isLoadingDocument, setIsLoadingDocument] = React.useState(false);
+    const [showFormAfterRejection, setShowFormAfterRejection] = React.useState(false);
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -62,6 +63,43 @@ export function KycForm() {
         }
     });
 
+    React.useEffect(() => {
+        const checkKycStatus = async () => {
+            if (!user?.id) return;
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch(`http://localhost:8080/user-service/users/kyc/status/${user.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    console.error("Could not fetch latest KYC status.");
+                    return;
+                }
+
+                const isKycInQueue = await response.json(); // API returns true if pending
+
+                // If the API confirms the user is in the queue, update the status to 'pending'
+                if (isKycInQueue && user.kycStatus !== 'verified') {
+                    const newKycStatus = 'pending';
+                    if (newKycStatus !== user.kycStatus) {
+                        const updatedUser = { ...user, kycStatus: newKycStatus };
+                        setUser(updatedUser);
+                        localStorage.setItem('userData', JSON.stringify(updatedUser));
+                    }
+                }
+
+            } catch (error) {
+                console.error("Error checking KYC status:", error);
+            }
+        };
+
+        checkKycStatus();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id]);
+
+
     async function onSubmit(values) {
         setIsSubmitting(true);
         try {
@@ -70,7 +108,6 @@ export function KycForm() {
                 throw new Error("Authentication failed. Please log in again.");
             }
 
-            // Step 1: Submit KYC Info (Aadhar, PAN) to User Service
             const kycInfoPayload = {
                 aadharNumber: values.aadhar,
                 panNumber: values.pan,
@@ -90,7 +127,6 @@ export function KycForm() {
                 throw new Error(errorData.message || "Failed to submit KYC information.");
             }
 
-            // Step 2: Upload the document file to Admin Service
             const file = values.document[0];
             const formData = new FormData();
             formData.append('file', file);
@@ -113,10 +149,10 @@ export function KycForm() {
                 description: 'Your documents are now under review.',
             });
 
-            // Update user's status globally to 'pending'
             const updatedUser = { ...user, kycStatus: 'pending' };
             setUser(updatedUser);
             localStorage.setItem('userData', JSON.stringify(updatedUser));
+            setShowFormAfterRejection(false);
 
         } catch (error) {
             toast({
@@ -129,7 +165,6 @@ export function KycForm() {
         }
     }
 
-    // --- NEW: Function to handle viewing the verified document ---
     const handleViewDocument = async () => {
         setIsLoadingDocument(true);
         try {
@@ -142,7 +177,6 @@ export function KycForm() {
 
             if (!response.ok) throw new Error("Could not retrieve document.");
 
-            // Get the file as a blob and create a temporary URL to open it
             const fileBlob = await response.blob();
             const documentUrl = URL.createObjectURL(fileBlob);
             window.open(documentUrl, '_blank');
@@ -161,7 +195,7 @@ export function KycForm() {
     const kycStatus = user?.kycStatus;
 
     if (!user) {
-        return <div>Loading user data...</div>; // Or a skeleton loader
+        return <div>Loading user data...</div>;
     }
 
     if (kycStatus === 'verified') {
@@ -171,7 +205,6 @@ export function KycForm() {
                 <AlertTitle className="font-headline">You are verified!</AlertTitle>
                 <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <span>Your identity has been successfully verified.</span>
-                    {/* --- NEW: Button to view the document --- */}
                     <Button
                         variant="outline"
                         size="sm"
@@ -195,7 +228,7 @@ export function KycForm() {
         return (
             <Alert>
                 <Clock className="h-5 w-5" />
-                <AlertTitle className="font-headline">Pending Review</AlertTitle>
+                <AlertTitle className="font-headline">You are in the queue!</AlertTitle>
                 <AlertDescription>
                     Your documents have been submitted and are currently under review. We'll notify you once the process is complete.
                 </AlertDescription>
@@ -203,13 +236,21 @@ export function KycForm() {
         );
     }
 
-    if (kycStatus === 'rejected') {
+    if (kycStatus === 'rejected' && !showFormAfterRejection) {
         return (
             <Alert variant="destructive">
                 <XCircle className="h-5 w-5" />
                 <AlertTitle className="font-headline">Verification Failed</AlertTitle>
-                <AlertDescription>
-                    There was an issue with your document. Please check the requirements and submit again.
+                <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <span>There was an issue with your document. Please check the requirements and try again.</span>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        className="mt-2 sm:mt-0"
+                        onClick={() => setShowFormAfterRejection(true)}
+                    >
+                        Resubmit Form
+                    </Button>
                 </AlertDescription>
             </Alert>
         );
@@ -218,7 +259,6 @@ export function KycForm() {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                {/* Aadhaar */}
                 <FormField
                     control={form.control}
                     name="aadhar"
@@ -236,8 +276,6 @@ export function KycForm() {
                         </FormItem>
                     )}
                 />
-
-                {/* PAN */}
                 <FormField
                     control={form.control}
                     name="pan"
@@ -255,8 +293,6 @@ export function KycForm() {
                         </FormItem>
                     )}
                 />
-
-                {/* Document Upload */}
                 <FormField
                     control={form.control}
                     name="document"
@@ -271,9 +307,7 @@ export function KycForm() {
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             field.onChange(e.target.files);
-
                                             if (previewUrl) URL.revokeObjectURL(previewUrl);
-
                                             if (file && allowedFileTypes.includes(file.type)) {
                                                 setPreviewUrl(URL.createObjectURL(file));
                                             } else {
@@ -300,7 +334,6 @@ export function KycForm() {
                         </FormItem>
                     )}
                 />
-
                 <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isSubmitting ? "Submitting..." : "Submit for Verification"}

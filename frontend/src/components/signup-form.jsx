@@ -129,7 +129,7 @@ export function SignupForm() {
                                 <FormItem>
                                     <FormLabel>Email</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="name@example.com" {...field} disabled={isLoading} />
+                                        <Input placeholder="name@example.com" type="email" {...field} disabled={isLoading} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

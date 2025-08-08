@@ -291,7 +291,6 @@ export function TransferForm() {
                                             <CommandList>
                                                 <CommandEmpty>No results found.</CommandEmpty>
                                                 <CommandGroup>
-                                                    {/* --- FIX: Conditionally show "Create" option --- */}
                                                     {isNewCategory && (
                                                         <CommandItem
                                                             value={categorySearch}
