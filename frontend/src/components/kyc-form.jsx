@@ -65,11 +65,14 @@ export function KycForm() {
 
     React.useEffect(() => {
         const checkKycStatus = async () => {
-            if (!user?.id) return;
+            // No need to check if the user is already known to be verified
+            if (!user?.id || user.kycStatus === 'verified') {
+                return;
+            }
 
             try {
                 const token = localStorage.getItem('authToken');
-                const response = await fetch(`http://localhost:8080/user-service/users/kyc/status/${user.id}`, {
+                const response = await fetch(`http://localhost:8080/admin-service/admin/kyc/status/${user.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -78,18 +81,21 @@ export function KycForm() {
                     return;
                 }
 
-                const isKycInQueue = await response.json(); // API returns true if pending
+                // Expects { "status": "true" } or { "status": "false" }
+                const data = await response.json();
 
-                // If the API confirms the user is in the queue, update the status to 'pending'
-                if (isKycInQueue && user.kycStatus !== 'verified') {
-                    const newKycStatus = 'pending';
+
+                // Only act if the backend confirms the user is verified.
+                if (data.status === 'true') {
+                    const newKycStatus = 'verified';
+
+                    // Update the state only if it has changed
                     if (newKycStatus !== user.kycStatus) {
                         const updatedUser = { ...user, kycStatus: newKycStatus };
                         setUser(updatedUser);
                         localStorage.setItem('userData', JSON.stringify(updatedUser));
                     }
                 }
-
             } catch (error) {
                 console.error("Error checking KYC status:", error);
             }
@@ -97,8 +103,7 @@ export function KycForm() {
 
         checkKycStatus();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id]);
-
+    }, [user?.id, user?.kycStatus]);
 
     async function onSubmit(values) {
         setIsSubmitting(true);
