@@ -15,6 +15,7 @@ public class AdminUserViewDTO {
     private String role;
     private LocalDateTime createdAt;
     private BigDecimal walletBalance;
+    private String kycDocumentUrl;
 
     // Getters and Setters
 
@@ -96,5 +97,13 @@ public class AdminUserViewDTO {
 
     public void setWalletBalance(BigDecimal walletBalance) {
         this.walletBalance = walletBalance;
+    }
+
+    public String getKycDocumentUrl() {
+        return kycDocumentUrl;
+    }
+
+    public void setKycDocumentUrl(String kycDocumentUrl) {
+        this.kycDocumentUrl = kycDocumentUrl;
     }
 }

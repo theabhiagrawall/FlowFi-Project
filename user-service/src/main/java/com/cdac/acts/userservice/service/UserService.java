@@ -10,6 +10,7 @@ import com.cdac.acts.userservice.model.User;
 import com.cdac.acts.userservice.repository.KycInfoRepository;
 import com.cdac.acts.userservice.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -84,8 +85,12 @@ public class UserService {
         kyc.setUser(user);
         kyc.setPanNumber(dto.getPanNumber());
 
-        if (dto.getAadhaarNumber() != null) {
+        // ✅ Corrected logic: check if the Aadhaar number has text
+        if (StringUtils.hasText(dto.getAadhaarNumber())) {
             kyc.setAadhaarNumber(dto.getAadhaarNumber());
+        } else {
+            // ✅ If the field is empty, explicitly set it to null
+            kyc.setAadhaarNumber(null);
         }
 
         kyc.setVerified(dto.isVerified());

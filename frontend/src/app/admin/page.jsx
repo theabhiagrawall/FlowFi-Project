@@ -39,8 +39,6 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
-    // ... (Your helper functions getInitials, formatCurrency, getKycStatusVariant)
-
     const getInitials = (name) => {
         const names = name.split(" ");
         return names.length > 1
@@ -103,7 +101,6 @@ export default function AdminPage() {
         fetchUsers();
     }, []);
 
-    // ✅ New function to handle user suspension
     const handleSuspendUser = async (userId) => {
         const token = localStorage.getItem("authToken");
 
@@ -119,15 +116,14 @@ export default function AdminPage() {
                 throw new Error("Failed to suspend user.");
             }
 
-            // Remove the user from the state to update the UI
             setUsers(users.filter(user => user.id !== userId));
 
             toast({
                 title: "Success",
-                description: "User account has been suspended.",
+                description: "User account has been deleted.",
             });
         } catch (error) {
-            console.error("Error suspending user:", error);
+            console.error("Error deleting user:", error);
             toast({
                 title: "Error",
                 description: error.message,
@@ -135,6 +131,69 @@ export default function AdminPage() {
             });
         }
     };
+
+    // ✅ New function to handle KYC approval
+    const handleApproveKyc = async (userId) => {
+        const token = localStorage.getItem("authToken");
+        try {
+            const res = await fetch(`http://localhost:8080/admin-service/admin/approve/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                throw new Error("Failed to approve KYC.");
+            }
+
+            setUsers(users.map(user => user.id === userId ? { ...user, kycStatus: 'Verified' } : user));
+
+            toast({
+                title: "Success",
+                description: "KYC has been approved.",
+            });
+        } catch (error) {
+            console.error("Error approving KYC:", error);
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive",
+            });
+        }
+    };
+
+    // ✅ New function to handle KYC rejection
+    const handleRejectKyc = async (userId) => {
+        const token = localStorage.getItem("authToken");
+        try {
+            const res = await fetch(`http://localhost:8080/admin-service/admin/reject/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                throw new Error("Failed to reject KYC.");
+            }
+
+            setUsers(users.map(user => user.id === userId ? { ...user, kycStatus: 'Unverified' } : user));
+
+            toast({
+                title: "Success",
+                description: "KYC has been rejected.",
+            });
+        } catch (error) {
+            console.error("Error rejecting KYC:", error);
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive",
+            });
+        }
+    };
+
 
     return (
         <div>
@@ -210,13 +269,14 @@ export default function AdminPage() {
                                                             View User Details
                                                         </Link>
                                                     </DropdownMenuItem>
-                                                    {user.kycStatus === "pending" && (
+                                                    {user.kycStatus?.toLowerCase() === "unverified" && (
                                                         <>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuLabel>KYC Verification</DropdownMenuLabel>
                                                             <DropdownMenuItem asChild>
+                                                                {/* ✅ Corrected the Link href */}
                                                                 <Link
-                                                                    href={user.kycDocumentUrl || "#"}
+                                                                    href={`http://localhost:8080/admin-service/kyc-documents/view/${user.id}`}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className={cn(
@@ -227,10 +287,10 @@ export default function AdminPage() {
                                                                     <FileText /> View Document
                                                                 </Link>
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleApproveKyc(user.id)}>
                                                                 <CheckCircle className="text-green-500" /> Approve
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleRejectKyc(user.id)}>
                                                                 <XCircle className="text-red-500" /> Reject
                                                             </DropdownMenuItem>
                                                         </>
@@ -238,10 +298,9 @@ export default function AdminPage() {
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
                                                         className="text-destructive"
-                                                        // ✅ Add the onClick handler
                                                         onClick={() => handleSuspendUser(user.id)}
                                                     >
-                                                        Delete Account
+                                                        Suspend Account
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
