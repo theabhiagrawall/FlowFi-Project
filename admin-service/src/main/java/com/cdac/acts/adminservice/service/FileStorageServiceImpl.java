@@ -63,13 +63,12 @@ public class FileStorageServiceImpl implements FileStorageService {
             throw new RuntimeException("Could not store file " + fileName + ". Please try again!", ex);
         }
     }
-
     @Override
     public ResponseEntity<Resource> getKycDocument(UUID userId) {
         KycInfo kycInfo = kycInfoRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("KYC Info not found for user"));
 
-        String documentPath = kycInfo.getDocumentPath(); // e.g., /kyc-docs/xxxx.pdf
+        String documentPath = kycInfo.getDocumentPath();
         Path filePath = Paths.get(kycDocsFolder).resolve(Paths.get(documentPath).getFileName()).normalize();
 
         try {
@@ -78,8 +77,13 @@ public class FileStorageServiceImpl implements FileStorageService {
                 throw new RuntimeException("File not found " + documentPath);
             }
 
+            String contentType = Files.probeContentType(filePath);
+
+            if (contentType == null) {
+                contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE; // This is a generic "binary file" type
+            }
             return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF) // or detect dynamically
+                    .contentType(MediaType.parseMediaType(contentType)) // Use the detected type
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                     .body(resource);
 
