@@ -36,38 +36,6 @@ export default function DashboardSidebar() {
   const { user, setUser } = useAuth(); // ✅ Get setUser to update the context
 
 
-  useEffect(() => {
-    // Don't run if we don't have a user ID yet
-    if (!user?.id) return;
-
-    const fetchFreshUser = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        const response = await fetch(`http://localhost:8080/user-service/users/${user.id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!response.ok) {
-
-          console.error("Failed to fetch fresh user data.");
-          return;
-        }
-
-        const freshUserData = await response.json();
-
-        // Update the global context and localStorage with the latest data
-        setUser(freshUserData);
-        localStorage.setItem('userData', JSON.stringify(freshUserData));
-
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
-
-    fetchFreshUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Run this effect when the user ID becomes available
-
 
 
   const isFullyVerified = user?.kycVerified && user?.emailVerified && user?.status === 'active';

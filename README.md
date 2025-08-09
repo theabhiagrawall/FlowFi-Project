@@ -1,139 +1,178 @@
-# 💸 Flow-Fi Microservices Project
+# 🚀 Flow-Fi Project
 
-A microservices-based wallet and transaction system built with **Spring Boot**, **Spring Cloud (Eureka, Gateway)**, **PostgreSQL**, **React**, and **Docker**.
+## 📋 Overview
+Flow-Fi is a microservices-based application that uses **Spring Boot**, **Spring Cloud**, **Eureka**, and **API Gateway** to provide a modular and scalable architecture. The gateway automatically discovers and routes requests to services registered with Eureka—no manual route configuration needed.
 
 ---
 
-## 🚀 Services Overview
+## 🛠 Technology Stack
+- **Java 17+**
+- **Spring Boot** (Web, JPA, DevTools)
+- **Spring Cloud Eureka** (Service Discovery)
+- **Spring Cloud Gateway** (API Gateway)
+- **PostgreSQL** (Database)
+- **Docker & Docker Compose**
+- **Maven**
 
-| Service             | Port  | Description                         |
-|---------------------|-------|-------------------------------------|
-| Service Discovery   | 8761  | Eureka registry for service lookup |
-| API Gateway         | 8080  | Routes all incoming requests       |
-| PostgreSQL          | 5432  | Backend database                   |
+---
+
+## 📦 Services & Ports
+
+| Service            | Port  | Description                                  |
+|--------------------|-------|----------------------------------------------|
+| Service Discovery  | 8761  | Eureka server for service registration/lookup|
+| API Gateway        | 8080  | Routes all incoming frontend requests        |
+| PostgreSQL         | 5432  | Primary database for all services            |
 
 ---
 
 ## 📛 Microservice Naming Conventions
 
-| Type               | Naming Format                     | Example                                   |
-|--------------------|------------------------------------|-------------------------------------------|
-| Project Directory  | kebab-case                         | `servicename-service(e.g. login-service)` |
-| Docker Container   | kebab-case                         | `servicename-service`                           |
-| Spring App Name    | lowercase with hyphen (`spring.application.name`) | `servicename-service`                           |
-| Eureka ID          | same as app name                   | `servicename-service`                           |
-| Gateway Route ID   | same as app name                   | `servicename-service`                           |
+| Type                | Naming Format                      | Example         |
+|---------------------|-------------------------------------|-----------------|
+| Project Directory   | kebab-case-service                  | `user-service`  |
+| Docker Container    | kebab-case-service                  | `user-service`  |
+| Spring App Name     | kebab-case-service (`spring.application.name`) | `user-service`  |
+| Eureka ID           | Same as app name                    | `user-service`  |
 
 ---
 
 ## ➕ How to Add a New Microservice
 
-### Step 1: Create Spring Boot Project
+### Step 1: Create the Spring Boot Project
+- Name your project directory according to the convention (e.g., `notification-service`).
+- Add dependencies: **Spring Web**, **Spring Boot DevTools**, **Spring Cloud Eureka Client**, **Spring Data JPA**, etc.
+- Configure `application.properties`:
+```properties
+spring.application.name=notification-service
+server.port=8084 # Choose an unused port
+eureka.client.serviceUrl.defaultZone=http://service-discovery:8761/eureka
+````
 
-1. Name it using the convention (e.g., `transaction-service`).
-2. Add required dependencies (Spring Web, Spring Boot DevTools, _Eureka Client_, etc.).
-3. Set `spring.application.name=transaction-service` in `application.properties`.
+### Step 2: Create a Dockerfile
+
+Place a `Dockerfile` in the root of your new microservice project:
+
+```dockerfile
+FROM maven:3.9.11-eclipse-temurin-17 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8761
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+### Step 3: Register in `docker-compose.yml`
+
+Add your new service:
+
+```yaml
+notification-service:
+  build: ./notification-service
+  container_name: notification-service
+  ports:
+    - "8084:8084"
+  depends_on:
+    - service-discovery
+    - postgres
+  networks:
+    - flownet
+```
+
+✅ **No manual API Gateway route configuration is needed**—the gateway will automatically discover your service through Eureka.
 
 ---
 
-### Step 2: Create Dockerfile
+## ⚙️ Running the Project
 
-Place this in the root of your microservice project:
+### Prerequisites
 
-```Dockerfile
-FROM eclipse-temurin:17-jdk-alpine
-WORKDIR /app
-COPY target/your-app-name.jar app.jar
-EXPOSE <your-port>
-ENTRYPOINT ["java", "-jar", "app.jar"]
-```
-Replace <your-port> and your-app-name.jar accordingly.
+* **Docker & Docker Compose**
+* **Java 17+**
+* **Maven**
 
-### Step 3: Register in docker-compose.yml
-Add this under services::
-
-```yaml
-  transaction-service:
-    build: ./transaction-service
-    container_name: transaction-service
-    ports:
-      - "8083:8083"
-    depends_on:
-      - service-discovery
-    networks:
-      - flownet   
-```
-### Step 4: Register in API Gateway
-Add to application.properties of api-gateway:
-
-```properties
-spring.cloud.gateway.routes[2].id=transaction-service
-spring.cloud.gateway.routes[2].uri=http://transaction-service:8083
-spring.cloud.gateway.routes[2].predicates[0]=Path=/transaction-service/**
-```
-### Step 5: Create .env File and PGDATA/ Folder
-This step is required before running Docker to configure your PostgreSQL database.
-
-Create a .env file in the root of the project (flow-fi/.env) with the following variables:
-
-```env
-DB_NAME=your_database_name
-DB_USER=your_database_user
-DB_PASS=your_database_password
-```
-Replace the values according to your environment.
-
-Create the PGDATA/ folder to persist PostgreSQL data:
+### Local Development
 
 ```bash
+# Clone repository
+git clone https://github.com/bhushan-joshi/flow-fi.git
+cd flow-fi
+
+# Create PostgreSQL data directory
 mkdir -p PGDATA
-```
-This folder will be mounted as a Docker volume for the PostgreSQL container.
 
-
-### ⚙️ Run All Services
-```bash
+# Build & run all services
 docker-compose up --build
 ```
 
-### 🗃 Directory Layout
-```pgsql
-flow-fi/
-├── service-discovery/
-├── api-gateway/
-├── servicename-service/     <-- newly added service
-├── docker-compose.yml
-├── README.md
-```
-### 🔗 Service URLs
-Service	URL
-Eureka	http://localhost:8761
-Gateway	http://localhost:8080
-Login Service	http://localhost:8080/login-service/
-Contact Service	http://localhost:8080/contact-service/
-Transaction	http://localhost:8080/transaction-service/
+---
 
-### 🛑 .gitignore Important
-```bash
-# PostgreSQL and target files
+## 🔗 Service URLs
+
+Once running, access services at:
+
+| Service                 | URL                                            |
+| ----------------------- | ---------------------------------------------- |
+| **Eureka Dashboard**    | [http://localhost:8761](http://localhost:8761) |
+| **API Gateway**         | [http://localhost:8080](http://localhost:8080) |
+| **User Service**        | `http://localhost:8080/user-service/**`        |
+| **Wallet Service**      | `http://localhost:8080/wallet-service/**`      |
+| **Transaction Service** | `http://localhost:8080/transaction-service/**` |
+
+---
+
+## 🛑 .gitignore
+
+Ensure `.gitignore` contains:
+
+```gitignore
+# PostgreSQL data & build artifacts
 /PGDATA/
 /target/
+
+# IDE files
 /.idea/
 /*.iml
+
+# Log files
 *.log
 ```
 
-### 🧾 Contribution Guide
-Clone the repo and create a new branch:
-```bash
-git checkout -b feature/my-service
-```
-Add your microservice using steps above.
+---
 
-Test locally with 
+## 🧾 Contribution Guide
+
 ```bash
+# Create a new branch
+git checkout -b feature/your-new-feature
+
+# Make your changes
+# Test locally
 docker-compose up --build
-```
-Commit and push changes.
 
-Open a PR and request review.
+# Commit & push
+git commit -m "Add new feature"
+git push origin feature/your-new-feature
+```
+
+* Open a **Pull Request** and request a review.
+
+---
+## Architecture diagram
+![img.png](images/img.png)
+
+
+## 📜 License
+
+This project is licensed under the **MIT License**.
+See the [LICENSE](LICENSE) file for details.
+
+
+---
